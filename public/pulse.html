@@ -1,0 +1,2045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#00D632" />
+<title>Pulse — Invest & Send</title>
+<style>
+/* ================= TOKENS ================= */
+:root{
+  --green:#00D632; --green-dk:#00A826; --green-soft:#E7FBEC;
+  --ink:#0B0B0B; --muted:#8A8A8E; --line:#EFEFEF;
+  --soft:#F6F6F6; --soft-2:#FAFAFA;
+  --red:#FF3B30; --red-soft:#FFEDEC;
+  --blue:#1E6FD9; --blue-soft:#EAF2FF;
+  --r:22px;
+  --font:"SF Pro Display",-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  --ease:cubic-bezier(.2,.8,.25,1);
+  --spring:cubic-bezier(.2,1.2,.35,1);
+}
+*,*::before,*::after{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{margin:0;background:#E9E9E9;color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body.no-scroll{overflow:hidden}
+button{font-family:inherit;font-size:inherit;color:inherit;background:none;border:none;cursor:pointer;padding:0}
+input,select,textarea{font-family:inherit;font-size:inherit;color:inherit;border:none;outline:none;background:none}
+h1,h2,h3,h4,p{margin:0;letter-spacing:-.02em;line-height:1.25}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.tiny{font-size:11.5px}
+.center{text-align:center}
+.pos{color:var(--green-dk)}
+.neg{color:var(--red)}
+.up{color:var(--green-dk)}
+.down{color:var(--red)}
+
+/* ================= PHONE ================= */
+.phone{max-width:480px;margin:0 auto;min-height:100vh;background:#fff;position:relative;padding-bottom:104px;overflow-x:hidden;box-shadow:0 0 80px rgba(0,0,0,.09)}
+@media (max-width:480px){.phone{box-shadow:none}}
+
+/* ================= IMPERSONATION BANNER ================= */
+.imp-banner{position:sticky;top:0;z-index:35;background:var(--ink);color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12.5px;font-weight:700;animation:slideDown .3s var(--spring)}
+@keyframes slideDown{from{transform:translateY(-100%)}to{transform:none}}
+.imp-banner b{color:var(--green)}
+.imp-banner button{background:var(--green);color:#000;padding:7px 12px;border-radius:9px;font-size:12px;font-weight:800;white-space:nowrap;flex-shrink:0}
+
+/* ================= TOPBAR ================= */
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:20px 20px 10px;gap:14px}
+.topbar .hi{font-size:13px;color:var(--muted);font-weight:600}
+.topbar h2{font-size:20px;font-weight:800;letter-spacing:-.03em}
+.avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:#fff;font-weight:800;font-size:15px;flex-shrink:0;letter-spacing:-.02em}
+.avatar.big{width:62px;height:62px;font-size:22px}
+.page-head{display:flex;align-items:center;gap:12px;padding:22px 20px 12px}
+.page-head h1{font-size:28px;font-weight:800;letter-spacing:-.04em;flex:1}
+.back-btn{width:38px;height:38px;border-radius:50%;background:var(--soft);display:grid;place-items:center;flex-shrink:0}
+.back-btn:hover{background:#EDEDED}
+
+/* ================= PRICE TICKER ================= */
+.ticker{overflow:hidden;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--soft-2);margin-bottom:4px;position:relative}
+.ticker-track{display:flex;width:max-content;animation:tickerScroll 60s linear infinite}
+.ticker:hover .ticker-track{animation-play-state:paused}
+.ticker-item{display:flex;align-items:center;gap:7px;padding:9px 16px;font-size:12.5px;font-weight:800;white-space:nowrap;border-right:1px solid var(--line);letter-spacing:-.01em}
+.ticker-item b{font-variant-numeric:tabular-nums}
+.ticker-item .chg{font-size:11.5px;font-weight:800}
+@keyframes tickerScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ================= HERO ================= */
+.hero{padding:12px 20px 0;animation:rise .5s var(--ease) both}
+.hero-label{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+.hero-value{font-size:46px;font-weight:800;letter-spacing:-.045em;line-height:1.05;margin:6px 0 8px;font-variant-numeric:tabular-nums}
+.hero-change{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;font-size:13.5px;font-weight:800;background:var(--green-soft);color:var(--green-dk)}
+.hero-change.down{background:var(--red-soft);color:var(--red)}
+.spark{width:100%;height:88px;margin-top:14px;display:block;overflow:visible}
+.spark path.line{stroke-dasharray:2000;stroke-dashoffset:2000;animation:draw 1.3s var(--ease) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.hero-split{display:flex;gap:24px;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.hero-split div span{display:block;font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.hero-split div b{font-size:16px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+
+/* ================= QUICK ACTIONS ================= */
+.quick{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:22px 14px 6px;animation:rise .5s .06s var(--ease) both}
+.q{display:flex;flex-direction:column;align-items:center;gap:7px;padding:6px 2px;border-radius:16px;transition:transform .15s var(--ease)}
+.q:active{transform:scale(.93)}
+.q i{width:50px;height:50px;border-radius:50%;background:var(--soft);display:grid;place-items:center;color:var(--ink);transition:background .2s}
+.q:hover i{background:#EAEAEA}
+.q b{font-size:11.5px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+.q.green i{background:var(--green);color:#000}
+.q.green:hover i{background:var(--green-dk)}
+
+/* ================= SECTIONS ================= */
+.section{padding:26px 20px 0;animation:rise .5s var(--ease) both}
+.sec-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.sec-head h3{font-size:18px;font-weight:800;letter-spacing:-.03em}
+.sec-head button{font-size:13.5px;font-weight:700;color:var(--green-dk)}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* ================= LIVE FEED ================= */
+.feed-list{background:#fff;border:1px solid var(--line);border-radius:20px;padding:4px 16px;overflow:hidden}
+.feed-item{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--line);width:100%;text-align:left;transition:background .15s;border-radius:8px;margin:0 -8px;padding-left:8px;padding-right:8px}
+.feed-item:last-child{border-bottom:none}
+.feed-item:hover{background:var(--soft-2)}
+.feed-item:active{transform:scale(.99)}
+.feed-ic{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;flex-shrink:0}
+.feed-ic.news{background:var(--blue-soft);color:var(--blue)}
+.feed-ic.tup{background:var(--green-soft);color:var(--green-dk)}
+.feed-ic.tdown{background:var(--red-soft);color:var(--red)}
+.feed-body{flex:1;min-width:0}
+.feed-body b{display:block;font-size:13.5px;font-weight:800;letter-spacing:-.01em;line-height:1.35;color:var(--ink)}
+.feed-body span{display:block;font-size:11.5px;color:var(--muted);font-weight:700;margin-top:3px}
+.feed-item.new{animation:feedIn .5s var(--ease)}
+@keyframes feedIn{from{opacity:0;transform:translateY(-8px);background:var(--green-soft)}to{opacity:1;transform:none}}
+
+/* ================= TRADE POPUP ================= */
+.trade-pop{position:fixed;top:14px;left:50%;transform:translate(-50%,-160%);width:calc(100% - 32px);max-width:448px;z-index:250;background:#0B0B0B;color:#fff;border-radius:18px;padding:12px 15px;display:flex;align-items:center;gap:12px;box-shadow:0 20px 40px -16px rgba(0,0,0,.55);transition:transform .5s var(--spring), opacity .3s;opacity:0;pointer-events:none}
+.trade-pop.show{transform:translate(-50%,0);opacity:1}
+.trade-pop-ic{width:40px;height:40px;border-radius:50%;background:var(--green);color:#000;display:grid;place-items:center;font-size:18px;font-weight:900;flex-shrink:0}
+.trade-pop-ic.down{background:var(--red);color:#fff}
+.trade-pop b{display:block;font-size:13.5px;font-weight:800;letter-spacing:-.01em}
+.trade-pop span{display:block;font-size:12px;color:#A9A9AE;font-weight:700;margin-top:1px}
+
+/* ================= STOCK ROWS ================= */
+.stock-list{display:flex;flex-direction:column}
+.stock-row{display:flex;align-items:center;gap:13px;padding:12px 4px;width:100%;border-radius:14px;transition:background .15s}
+.stock-row:hover{background:var(--soft-2)}
+.stock-logo{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:17px;flex-shrink:0;letter-spacing:-.02em}
+.stock-logo.sm{width:36px;height:36px;font-size:14px}
+.stock-main{flex:1;min-width:0;text-align:left}
+.stock-main b{display:block;font-size:15px;font-weight:800;letter-spacing:-.01em}
+.stock-main span{display:block;font-size:12.5px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stock-right{text-align:right;flex-shrink:0}
+.stock-right b{display:block;font-size:15px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;transition:color .3s}
+.stock-right .chg{font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums}
+@keyframes flashUp{0%{color:var(--green)}100%{color:var(--ink)}}
+@keyframes flashDown{0%{color:var(--red)}100%{color:var(--ink)}}
+.flash-up{animation:flashUp .8s ease}
+.flash-down{animation:flashDown .8s ease}
+
+/* ================= RATINGS ================= */
+.rating{display:inline-block;padding:3px 9px;border-radius:999px;font-size:10.5px;font-weight:800;letter-spacing:.02em;white-space:nowrap}
+.rating-strong{background:var(--green);color:#000}
+.rating-buy{background:var(--green-soft);color:var(--green-dk)}
+.rating-hold{background:var(--soft);color:#666}
+.rating-stable{background:var(--blue-soft);color:var(--blue)}
+
+/* ================= HOT SCROLL ================= */
+.hot-scroll{display:flex;gap:10px;overflow-x:auto;padding:2px 20px 6px;margin:0 -20px;scrollbar-width:none;scroll-snap-type:x mandatory}
+.hot-scroll::-webkit-scrollbar{display:none}
+.hot-card{flex:0 0 138px;scroll-snap-align:start;padding:14px;border-radius:18px;background:var(--soft);display:flex;flex-direction:column;gap:3px;align-items:flex-start;transition:transform .18s var(--ease), background .18s;text-align:left}
+.hot-card:hover{transform:translateY(-3px);background:#F0F0F0}
+.hot-card:active{transform:scale(.97)}
+.hot-logo{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:14px;margin-bottom:7px}
+.hot-ticker{font-size:13.5px;font-weight:800;letter-spacing:-.01em}
+.hot-price{font-size:15px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.hot-card .chg{font-size:11.5px;font-weight:700}
+.hot-card .rating{margin-top:6px}
+
+/* ================= EMPTY ================= */
+.empty{text-align:center;padding:34px 16px;border-radius:20px;background:var(--soft-2);border:1px dashed #E2E2E2}
+.empty .big-ic{width:56px;height:56px;border-radius:50%;background:#fff;display:grid;place-items:center;margin:0 auto 12px;box-shadow:0 6px 18px rgba(0,0,0,.06);color:var(--muted)}
+.empty b{display:block;font-size:15px;font-weight:800;margin-bottom:3px}
+.empty p{font-size:13px;color:var(--muted);margin-bottom:14px}
+
+/* ================= SEARCH ================= */
+.search{display:flex;align-items:center;gap:10px;background:var(--soft);border-radius:16px;padding:13px 16px;margin:0 0 4px;transition:box-shadow .2s}
+.search:focus-within{box-shadow:0 0 0 3px rgba(0,214,50,.16)}
+.search svg{color:var(--muted);flex-shrink:0}
+.search input{flex:1;font-size:15px;font-weight:600;min-width:0}
+.search input::placeholder{color:#B4B4B8;font-weight:600}
+
+/* ================= LIVE BADGE ================= */
+.live{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;letter-spacing:.04em;color:var(--green-dk);background:var(--green-soft);padding:5px 10px;border-radius:999px}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* ================= ACTIVITY ================= */
+.tx-row{display:flex;align-items:center;gap:13px;padding:12px 4px;border-bottom:1px solid var(--line)}
+.tx-row:last-child{border-bottom:none}
+.tx-ic{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;font-weight:800;font-size:18px}
+.tx-ic.in{background:var(--green-soft);color:var(--green-dk)}
+.tx-ic.out{background:var(--soft);color:var(--ink)}
+.tx-ic.neutral{background:var(--blue-soft);color:var(--blue)}
+.tx-main{flex:1;min-width:0}
+.tx-main b{display:block;font-size:14.5px;font-weight:800;letter-spacing:-.01em}
+.tx-main span{display:block;font-size:12.5px;color:var(--muted);font-weight:600}
+.tx-amt{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+
+/* ================= SETTINGS ================= */
+.profile-card{display:flex;align-items:center;gap:15px;padding:20px;background:var(--soft);border-radius:22px;margin:0 20px}
+.profile-card h2{font-size:20px;font-weight:800;letter-spacing:-.03em}
+.profile-card p{font-size:13px;color:var(--muted);font-weight:600;margin-top:2px}
+.list{margin:16px 20px 0;background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.list button{display:flex;align-items:center;gap:14px;width:100%;padding:17px 18px;border-bottom:1px solid var(--line);text-align:left;font-size:15px;font-weight:700;transition:background .15s}
+.list button:last-child{border-bottom:none}
+.list button:hover{background:var(--soft-2)}
+.list button .ic{width:38px;height:38px;border-radius:12px;background:var(--soft);display:grid;place-items:center;flex-shrink:0}
+.list button .chev{margin-left:auto;color:#C4C4C8}
+.list button.danger{color:var(--red)}
+.list button.danger .ic{background:var(--red-soft);color:var(--red)}
+.vault-card{margin:18px 20px 0;padding:20px;border-radius:22px;background:linear-gradient(135deg,#0B0B0B,#232323);color:#fff;display:flex;align-items:center;gap:15px;transition:transform .22s var(--ease), box-shadow .22s;position:relative;overflow:hidden}
+.vault-card::after{content:'';position:absolute;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle, rgba(0,214,50,.35), transparent 70%);top:-90px;right:-50px;pointer-events:none}
+.vault-card:hover{transform:translateY(-3px);box-shadow:0 22px 44px -20px rgba(0,0,0,.55)}
+.vault-card .vic{width:48px;height:48px;border-radius:15px;background:var(--green);color:#000;display:grid;place-items:center;flex-shrink:0}
+.vault-card b{display:block;font-size:17px;font-weight:800;letter-spacing:-.02em}
+.vault-card p{font-size:12.5px;color:#A9A9AE;margin-top:2px;font-weight:600}
+.vault-card .arrow{margin-left:auto;color:#8A8A8E;flex-shrink:0}
+
+/* ================= VAULT ================= */
+.vault-section{padding:20px}
+.vault-section h3{font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.vault-user{border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:11px;background:#fff}
+.vault-user-head{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+.vault-user-head b{display:block;font-size:15px;font-weight:800}
+.vault-user-head span{display:block;font-size:12px;color:var(--muted);font-weight:600}
+.seed-badge{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.06em;background:var(--blue-soft);color:var(--blue);padding:2px 6px;border-radius:5px;margin-left:5px;vertical-align:middle;text-transform:uppercase}
+.vault-user label{display:block;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;margin-top:10px}
+.vault-user input{width:100%;padding:11px 13px;border-radius:11px;background:var(--soft);font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;border:1px solid transparent;transition:border-color .2s}
+.vault-user input[type="text"]{font-weight:600;font-size:13px}
+.vault-user input:focus{border-color:var(--green);background:#fff}
+.vault-user-actions{display:flex;gap:7px;margin-top:12px}
+.vault-user-actions button{flex:1;padding:9px 4px;border-radius:10px;font-size:12px;font-weight:800;background:var(--soft);transition:background .15s}
+.vault-user-actions button:hover{background:#EDEDED}
+.vault-user-actions button.danger{background:var(--red-soft);color:var(--red)}
+.vault-user-actions button.danger:hover{background:#FFE0DE}
+.vault-stock{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.vault-stock:last-child{border-bottom:none}
+.vault-stock b{font-size:14.5px;font-weight:800;flex:1}
+.vault-stock input{width:120px;padding:9px 12px;border-radius:10px;background:var(--soft);font-size:14px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums;border:1px solid transparent}
+.vault-stock input:focus{border-color:var(--green);background:#fff}
+.vault-danger{margin:8px 20px 0;padding:16px;border-radius:18px;border:1px solid var(--red-soft);background:#FFF8F8}
+.vault-danger b{display:block;font-size:14.5px;font-weight:800;margin-bottom:3px}
+.vault-danger p{font-size:12.5px;color:var(--muted);margin-bottom:12px;font-weight:600}
+.btn-danger{width:100%;padding:13px;border-radius:13px;background:var(--red);color:#fff;font-size:14px;font-weight:800}
+.btn-danger:active{transform:scale(.98)}
+
+/* ================= HOLDINGS EDITOR ================= */
+.holding-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.holding-row:last-child{border-bottom:none}
+.holding-row input{width:92px;padding:9px 10px;border-radius:10px;background:var(--soft);font-size:13px;font-weight:800;text-align:right;border:1px solid transparent;font-variant-numeric:tabular-nums}
+.holding-row input:focus{border-color:var(--green);background:#fff}
+.holding-main{flex:1;min-width:0}
+.holding-main b{display:block;font-size:14px;font-weight:800}
+.holding-main span{display:block;font-size:11.5px;color:var(--muted);font-weight:700}
+.hx{width:28px;height:28px;border-radius:50%;background:var(--red-soft);color:var(--red);display:grid;place-items:center;font-size:17px;font-weight:800;flex-shrink:0}
+.hx:hover{background:#FFE0DE}
+
+/* ================= BUTTONS ================= */
+.btn-primary{width:100%;padding:16px;border-radius:16px;background:var(--green);color:#000;font-size:16px;font-weight:800;letter-spacing:-.01em;transition:transform .15s var(--ease), background .2s;display:flex;align-items:center;justify-content:center;gap:9px}
+.btn-primary:hover{background:var(--green-dk)}
+.btn-primary:active{transform:scale(.975)}
+.btn-primary:disabled{opacity:.6;cursor:default;transform:none}
+.btn-ghost{width:100%;padding:16px;border-radius:16px;background:var(--soft);color:var(--ink);font-size:16px;font-weight:800;transition:background .15s, transform .15s;display:flex;align-items:center;justify-content:center;gap:9px}
+.btn-ghost:hover{background:#EDEDED}
+.btn-ghost:active{transform:scale(.975)}
+.btn-big{padding:17px}
+
+/* ================= TAB BAR ================= */
+.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:40;background:rgba(255,255,255,.94);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-top:1px solid var(--line);display:flex;padding:9px 8px calc(9px + env(safe-area-inset-bottom))}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;color:#A0A0A4;font-size:10.5px;font-weight:800;letter-spacing:.01em;transition:color .2s}
+.tab.on{color:var(--ink)}
+.tab svg{transition:transform .25s var(--spring)}
+.tab.on svg{transform:translateY(-2px) scale(1.06)}
+
+/* ================= SHEETS ================= */
+.sheet-backdrop{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .22s ease both;backdrop-filter:blur(2px)}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.sheet{width:100%;max-width:480px;background:#fff;border-radius:28px 28px 0 0;padding:10px 20px 30px;max-height:90vh;overflow-y:auto;overscroll-behavior:contain;animation:slideUp .38s var(--spring) both;padding-bottom:calc(30px + env(safe-area-inset-bottom))}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet::-webkit-scrollbar{display:none}
+.sheet-grab{width:40px;height:4.5px;border-radius:99px;background:#E2E2E6;margin:0 auto 16px}
+.sheet-head{display:flex;align-items:center;gap:11px;margin-bottom:16px}
+.sheet-head h2{font-size:21px;font-weight:800;letter-spacing:-.035em;flex:1}
+.sheet-close{width:34px;height:34px;border-radius:50%;background:var(--soft);display:grid;place-items:center;font-size:19px;color:var(--ink);flex-shrink:0;transition:background .15s}
+.sheet-close:hover{background:#E8E8E8}
+.sheet-back{width:34px;height:34px;border-radius:50%;background:var(--soft);display:grid;place-items:center;flex-shrink:0;transition:background .15s}
+.sheet-back:hover{background:#E8E8E8}
+.sheet-sub{font-size:13.5px;color:var(--muted);font-weight:600;margin-bottom:18px}
+.section-label{font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:20px 0 10px}
+
+/* ================= METHOD PICKER ================= */
+.method-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 4px}
+.method-btn{display:flex;align-items:center;gap:10px;padding:14px;border-radius:15px;background:var(--soft);border:1.5px solid transparent;font-size:13.5px;font-weight:800;text-align:left;transition:all .15s;color:var(--ink)}
+.method-btn:hover{background:#EAEAEA;border-color:#E0E0E4}
+.method-btn:active{transform:scale(.97)}
+.method-btn .m-ic{width:36px;height:36px;border-radius:11px;background:#fff;display:grid;place-items:center;font-size:16px;font-weight:900;flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,.06);color:var(--ink)}
+
+/* ================= AMOUNT INPUT ================= */
+.amount-stock{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.amount-stock b{display:block;font-size:15px;font-weight:800}
+.amount-stock span{display:block;font-size:12.5px;color:var(--muted);font-weight:600}
+.amount-display{display:flex;align-items:center;justify-content:center;gap:4px;padding:10px 0 4px}
+.amount-display > span{font-size:44px;font-weight:800;letter-spacing:-.05em;color:#C8C8CC}
+.amount-display input{width:100%;text-align:center;font-size:56px;font-weight:800;letter-spacing:-.05em;font-variant-numeric:tabular-nums;padding:0}
+.amount-display input::placeholder{color:#DADADE}
+.amount-display.centered input{font-size:34px;letter-spacing:.3em;text-align:center}
+.amount-hint{text-align:center;font-size:13.5px;color:var(--muted);font-weight:600;margin-bottom:18px}
+.amount-hint b{color:var(--ink);font-weight:800}
+.quick-amounts{display:flex;gap:8px;margin-bottom:22px}
+.quick-amounts button{flex:1;padding:11px 4px;border-radius:12px;background:var(--soft);font-size:13px;font-weight:800;transition:background .15s}
+.quick-amounts button:hover{background:#E9E9E9}
+.quick-amounts button:active{transform:scale(.96)}
+.balance-hint{text-align:center;font-size:12.5px;color:var(--muted);font-weight:600;margin-top:14px}
+
+/* ================= FORM FIELDS ================= */
+.field-label{display:block;font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:14px 0 7px}
+.field-input{width:100%;padding:15px 16px;border-radius:14px;background:var(--soft);font-size:16px;font-weight:700;border:1.5px solid transparent;transition:border-color .2s, background .2s;appearance:none;-webkit-appearance:none}
+.field-input:focus{border-color:var(--green);background:#fff}
+.field-input::placeholder{color:#B4B4B8;font-weight:600}
+
+/* ================= PROCESSING / SUCCESS / ERROR ================= */
+.processing{padding:40px 0 30px;text-align:center}
+.spinner{width:44px;height:44px;border-radius:50%;margin:0 auto 20px;border:4px solid var(--soft);border-top-color:var(--green);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.processing h2{font-size:21px;font-weight:800;letter-spacing:-.03em;margin-bottom:5px}
+.processing p{font-size:13.5px;color:var(--muted);font-weight:600}
+.success{text-align:center;padding:26px 0 10px}
+.success-check{width:84px;height:84px;border-radius:50%;background:var(--green);display:grid;place-items:center;margin:0 auto 22px;animation:pop .55s var(--spring) both;box-shadow:0 16px 36px -12px rgba(0,214,50,.65);color:#000}
+@keyframes pop{0%{transform:scale(0) rotate(-40deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+.success h2{font-size:24px;font-weight:800;letter-spacing:-.035em;margin-bottom:7px}
+.success p{font-size:14.5px;color:var(--muted);font-weight:600;line-height:1.5;margin-bottom:26px}
+.error-state{text-align:center;padding:26px 0 10px}
+.error-x{width:84px;height:84px;border-radius:50%;background:var(--red-soft);color:var(--red);display:grid;place-items:center;margin:0 auto 20px;animation:pop .5s var(--spring) both;font-size:36px;font-weight:900}
+.error-state h2{font-size:22px;font-weight:800;letter-spacing:-.035em;margin-bottom:8px}
+.error-state p{font-size:14px;color:var(--muted);font-weight:600;line-height:1.55;margin-bottom:24px;padding:0 6px}
+.shake{animation:shake .4s cubic-bezier(.36,.07,.19,.97)}
+@keyframes shake{10%,90%{transform:translateX(-3px)}20%,80%{transform:translateX(6px)}30%,50%,70%{transform:translateX(-8px)}40%,60%{transform:translateX(8px)}}
+
+/* ================= RECEIVE ================= */
+.receive-card{background:var(--soft);border-radius:20px;padding:22px;text-align:center;margin-bottom:18px}
+.receive-handle{font-size:26px;font-weight:800;letter-spacing:-.03em;margin:10px 0 4px}
+.receive-card p{font-size:13px;color:var(--muted);font-weight:600}
+
+/* ================= AUTH ================= */
+.auth{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:44px 26px;position:relative;overflow:hidden;background:#fff;max-width:480px;margin:0 auto}
+.auth::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:480px;height:480px;border-radius:50%;pointer-events:none;background:radial-gradient(circle, rgba(0,214,50,.20), transparent 68%);filter:blur(14px)}
+.auth::after{content:'';position:absolute;bottom:-180px;right:-120px;width:380px;height:380px;border-radius:50%;pointer-events:none;background:radial-gradient(circle, rgba(0,214,50,.10), transparent 70%)}
+.auth-inner{position:relative;z-index:1;animation:rise .6s var(--ease) both}
+.brand{text-align:center;margin-bottom:32px}
+.brand-mark{width:74px;height:74px;border-radius:22px;margin:0 auto 16px;background:var(--green);color:#000;display:grid;place-items:center;font-size:34px;font-weight:900;letter-spacing:-.04em;box-shadow:0 18px 40px -14px rgba(0,214,50,.65);animation:bob 3.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.brand h1{font-size:34px;font-weight:900;letter-spacing:-.05em}
+.brand p{font-size:14.5px;color:var(--muted);font-weight:600;margin-top:5px}
+.auth-tabs{display:flex;gap:4px;padding:4px;border-radius:15px;background:var(--soft);margin-bottom:22px}
+.auth-tabs button{flex:1;padding:12px;border-radius:12px;font-size:14.5px;font-weight:800;color:var(--muted);transition:all .2s var(--ease)}
+.auth-tabs button.on{background:#fff;color:var(--ink);box-shadow:0 3px 10px rgba(0,0,0,.08)}
+.auth-form label{display:block;font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 7px}
+.auth-form input{width:100%;padding:16px;border-radius:15px;background:var(--soft);font-size:16px;font-weight:700;margin-bottom:16px;border:1.5px solid transparent;transition:border-color .2s, background .2s}
+.auth-form input:focus{border-color:var(--green);background:#fff}
+.auth-form input::placeholder{color:#B4B4B8;font-weight:600}
+.auth-err{color:var(--red);font-size:13.5px;font-weight:700;min-height:18px;margin:-6px 0 10px}
+.auth-note{text-align:center;font-size:12.5px;color:var(--muted);font-weight:600;margin-top:18px}
+
+/* ================= TOAST ================= */
+.toast{position:fixed;left:50%;bottom:120px;transform:translate(-50%,16px);background:var(--ink);color:#fff;padding:13px 22px;border-radius:14px;font-size:13.5px;font-weight:700;z-index:300;opacity:0;transition:all .3s var(--spring);pointer-events:none;max-width:88vw;text-align:center;box-shadow:0 14px 30px -10px rgba(0,0,0,.45)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+.spacer{height:8px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001s!important;transition-duration:.001s!important}}
+</style>
+</head>
+<body>
+
+<div id="app" class="phone"></div>
+<div id="sheet-root"></div>
+
+<script>
+/* ============================================================
+   0. ICONS
+   ============================================================ */
+const ICONS = {
+  home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/>',
+  markets:'<path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v5h-5"/>',
+  activity:'<path d="M4 7h13"/><path d="m14 4 3 3-3 3"/><path d="M20 17H7"/><path d="m10 14-3 3 3 3"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-4.2-4.2"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  send:'<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
+  receive:'<path d="M12 3v13"/><path d="m5 9 7 7 7-7"/><path d="M5 21h14"/>',
+  withdraw:'<path d="M12 17V4"/><path d="m5 10 7-7 7 7"/><path d="M5 21h14"/>',
+  lock:'<rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+  chev:'<path d="M9 6l6 6-6 6"/>',
+  back:'<path d="M15 18l-6-6 6-6"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  shield:'<path d="M12 3l8 3v6c0 5-3.4 8.4-8 9.5C7.4 20.4 4 17 4 12V6z"/><path d="m9 12 2 2 4-4"/>',
+  logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.6" r="1" fill="currentColor" stroke="none"/>',
+  qr:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM20 14h1M14 20h1M18 20h3v1"/>',
+  news:'<path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/>',
+  up:'<path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>',
+  down:'<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>',
+  swap:'<path d="M4 7h13"/><path d="m14 4 3 3-3 3"/><path d="M20 17H7"/><path d="m10 14-3 3 3 3"/>'
+};
+function icon(name, size){
+  size = size || 22;
+  return '<svg viewBox="0 0 24 24" width="'+size+'" height="'+size+'" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+(ICONS[name]||'')+'</svg>';
+}
+
+/* ============================================================
+   1. CONSTANTS
+   ============================================================ */
+const USERS_KEY   = 'pulse_users_v1';
+const SESSION_KEY = 'pulse_session_v1';
+const STOCKS_KEY  = ********;
+const VAULT_KEY   = ********;
+const IMP_KEY     = 'pulse_admin_return';
+const ADMIN_CODE  = '2002';
+const START_CASH  = 10000;
+
+const DEFAULT_WITHDRAWAL_ERROR =
+  'We couldn\'t verify your payment details. Please check your information and try again, or contact support.';
+
+const DEFAULT_STOCKS = [
+  { t:'AAPL',  n:'Apple Inc.',       p:227.52,  rating:'Strong Buy', sector:'Technology',     color:'#1D1D1F' },
+  { t:'TSLA',  n:'Tesla Inc.',       p:248.19,  rating:'Buy',        sector:'Automotive',     color:'#E82127' },
+  { t:'MSFT',  n:'Microsoft Corp.',  p:428.90,  rating:'Strong Buy', sector:'Technology',     color:'#0078D4' },
+  { t:'NVDA',  n:'NVIDIA Corp.',     p:142.83,  rating:'Strong Buy', sector:'Semiconductors', color:'#76B900' },
+  { t:'AMZN',  n:'Amazon.com',       p:207.86,  rating:'Buy',        sector:'E-commerce',     color:'#FF9900' },
+  { t:'GOOGL', n:'Alphabet Inc.',    p:182.45,  rating:'Buy',        sector:'Technology',     color:'#4285F4' },
+  { t:'META',  n:'Meta Platforms',   p:596.33,  rating:'Buy',        sector:'Technology',     color:'#0866FF' },
+  { t:'USDT',  n:'Tether USD',       p:1.00,    rating:'Stable',     sector:'Crypto',         color:'#26A17B' },
+  { t:'BTC',   n:'Bitcoin',          p:96420.00,rating:'Buy',        sector:'Crypto',         color:'#F7931A' },
+  { t:'ETH',   n:'Ethereum',         p:3345.20, rating:'Buy',        sector:'Crypto',         color:'#627EEA' },
+  { t:'NFLX',  n:'Netflix Inc.',     p:872.40,  rating:'Buy',        sector:'Entertainment',  color:'#E50914' },
+  { t:'DIS',   n:'Walt Disney Co.',  p:112.66,  rating:'Hold',       sector:'Entertainment',  color:'#113CCF' }
+];
+
+/* --- payment methods --- */
+const WITHDRAW_METHODS = {
+  bank: {
+    label:'Bank account', icon:'🏦',
+    fields:[
+      { name:'holder',  label:'Account holder name', placeholder:'Full legal name' },
+      { name:'routing', label:'Routing number',      placeholder:'9 digits', type:'tel', maxlength:9 },
+      { name:'account', label:'Account number',      placeholder:'Account number', type:'tel' }
+    ]
+  },
+  cashapp: {
+    label:'Cash App', icon:'$',
+    fields:[
+      { name:'tag', label:'$Cashtag', placeholder:'$yourcashtag' }
+    ]
+  },
+  paypal: {
+    label:'PayPal', icon:'P',
+    fields:[
+      { name:'email', label:'PayPal email', placeholder:'you@email.com', type:'email' }
+    ]
+  },
+  zelle: {
+    label:'Zelle', icon:'Z',
+    fields:[
+      { name:'recipient', label:'Recipient name', placeholder:'Full name' },
+      { name:'contact',   label:'Phone or email', placeholder:'+1 555 000 0000' }
+    ]
+  },
+  crypto: {
+    label:'Crypto wallet', icon:'₿',
+    fields:[
+      { name:'network', label:'Network', type:'select', options:['Bitcoin','Ethereum','USDT (TRC20)','Solana'] },
+      { name:'address', label:'Wallet address', placeholder:'Paste your wallet address' }
+    ]
+  }
+};
+
+const DEPOSIT_METHODS = {
+  card: {
+    label:'Debit / Credit card', icon:'💳',
+    fields:[
+      { name:'number', label:'Card number',  placeholder:'1234 5678 9012 3456', type:'tel', maxlength:19 },
+      { name:'name',   label:'Name on card', placeholder:'Full name' },
+      { name:'expiry', label:'Expiry',       placeholder:'MM / YY', maxlength:7 },
+      { name:'cvv',    label:'CVV',          placeholder:'123', type:'tel', maxlength:4 }
+    ]
+  },
+  bank: {
+    label:'Bank account', icon:'🏦',
+    fields:[
+      { name:'holder',  label:'Account holder name', placeholder:'Full legal name' },
+      { name:'routing', label:'Routing number',      placeholder:'9 digits', type:'tel', maxlength:9 },
+      { name:'account', label:'Account number',      placeholder:'Account number', type:'tel' }
+    ]
+  },
+  applepay: {
+    label:'Apple Pay', icon:'',
+    fields:[]
+  },
+  paypal: {
+    label:'PayPal', icon:'P',
+    fields:[
+      { name:'email', label:'PayPal email', placeholder:'you@email.com', type:'email' }
+    ]
+  }
+};
+
+/* ============================================================
+   2. STORAGE
+   ============================================================ */
+function loadJSON(k, fb){
+  try{ const r = localStorage.getItem(k); return r ? JSON.parse(r) : fb; }
+  catch(e){ return fb; }
+}
+function saveJSON(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+
+const NF2 = new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:2});
+function money(n){ return NF2.format(Number(n) || 0); }
+function moneySigned(n){ return (n >= 0 ? '+' : '−') + NF2.format(Math.abs(Number(n) || 0)); }
+function fmtShares(n){ return (Math.round(n * 10000) / 10000).toLocaleString('en-US', { maximumFractionDigits: 4 }); }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function uid(){ return Math.random().toString(36).slice(2, 10); }
+function hashPass(p){
+  let h = 0;
+  for(let i = 0; i < p.length; i++){ h = ((h << 5) - h) + p.charCodeAt(i); h |= 0; }
+  return 'h' + Math.abs(h).toString(36) + '_' + p.length;
+}
+function rand(n){ const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+function hashStr(s){ let h = 0; for(let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); }
+function fmtDate(ts){
+  const d = new Date(ts), now = new Date();
+  const time = d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+  if(d.toDateString() === now.toDateString()) return 'Today, ' + time;
+  const y = new Date(now); y.setDate(y.getDate() - 1);
+  if(d.toDateString() === y.toDateString()) return 'Yesterday, ' + time;
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric' }) + ', ' + time;
+}
+function timeAgo(ts){
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if(s < 10) return 'just now';
+  if(s < 60) return s + 's ago';
+  if(s < 3600) return Math.floor(s / 60) + 'm ago';
+  return Math.floor(s / 3600) + 'h ago';
+}
+function greeting(){
+  const h = new Date().getHours();
+  if(h < 12) return 'Good morning';
+  if(h < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
+/* ============================================================
+   3. SEEDED DEMO USERS
+   ============================================================ */
+function seedUser(balance, holdingsArr, createdAt){
+  const holdings = {};
+  holdingsArr.forEach(([t, shares, avg]) => { holdings[t] = { shares, avg }; });
+  return {
+    password: hashPass('demo1234'),
+    balance,
+    holdings,
+    transactions: [{ id: uid(), type:'deposit', name:'Initial deposit', amount: balance, date: createdAt }],
+    createdAt,
+    withdrawalError: DEFAULT_WITHDRAWAL_ERROR,
+    isSeed: true
+  };
+}
+
+const SEED_USERS = {
+  alexm:  seedUser(24500, [['AAPL',20,215], ['TSLA',15,240], ['NVDA',40,130]],     Date.now() - 86400000*12),
+  sarahj: seedUser(8900,  [['MSFT',8,410],  ['AMZN',12,195], ['BTC',0.15,91000]],  Date.now() - 86400000*9),
+  mikec:  seedUser(48200, [['AAPL',60,200], ['GOOGL',25,170], ['META',18,540]],    Date.now() - 86400000*7),
+  emmar:  seedUser(3200,  [['NFLX',3,840],  ['DIS',40,108]],                       Date.now() - 86400000*5),
+  davids: seedUser(15000, [['ETH',2.4,3100],['USDT',5000,1]],                      Date.now() - 86400000*4),
+  lisaw:  seedUser(61000, [['NVDA',200,120],['AAPL',80,205], ['TSLA',50,235]],     Date.now() - 86400000*3),
+  jamest: seedUser(950,   [],                                                       Date.now() - 86400000*2),
+  ninap:  seedUser(34000, [['BTC',0.28,92000],['ETH',3.1,3050],['AMZN',20,200]],  Date.now() - 86400000*1)
+};
+
+/* ============================================================
+   4. LOAD STATE
+   ============================================================ */
+let users = loadJSON(USERS_KEY, null);
+let stocks = loadJSON(STOCKS_KEY, null);
+let currentUser = sessionStorage.getItem(SESSION_KEY);
+let vaultUnlocked = sessionStorage.getItem(VAULT_KEY) === '1';
+let page = 'home';
+let authMode = 'signup';
+let sparkSeq = 0;
+let feed = [];
+let pendingWithdraw = null;
+let pendingDeposit = null;
+let currentPop = null;
+
+if(!users){
+  users = JSON.parse(JSON.stringify(SEED_USERS));
+  saveJSON(USERS_KEY, users);
+} else {
+  /* migrate old accounts */
+  Object.keys(users).forEach(n => {
+    if(!users[n].withdrawalError) users[n].withdrawalError = DEFAULT_WITHDRAWAL_ERROR;
+    if(!Array.isArray(users[n].transactions)) users[n].transactions = [];
+    if(!users[n].holdings) users[n].holdings = {};
+    if(users[n].balance == null) users[n].balance = 0;
+  });
+  /* if only seeds exist (fresh) — reseed is not needed */
+  if(Object.keys(users).length === 0){
+    users = JSON.parse(JSON.stringify(SEED_USERS));
+    saveJSON(USERS_KEY, users);
+  }
+}
+
+if(!stocks){
+  stocks = DEFAULT_STOCKS.map(s => Object.assign({}, s, { base: s.p }));
+  saveJSON(STOCKS_KEY, stocks);
+}
+
+if(currentUser && !users[currentUser]){
+  currentUser = null;
+  sessionStorage.removeItem(SESSION_KEY);
+}
+
+function saveUsers(){ saveJSON(USERS_KEY, users); }
+function saveStocks(){ saveJSON(STOCKS_KEY, stocks); }
+function stockByTicker(t){ return stocks.find(s => s.t === t); }
+
+/* ============================================================
+   5. PORTFOLIO MATH
+   ============================================================ */
+function holdingsValue(u){
+  let v = 0;
+  for(const t in u.holdings){
+    const s = stockByTicker(t);
+    if(s) v += u.holdings[t].shares * s.p;
+  }
+  return v;
+}
+function portfolioValue(u){ return Number(u.balance) + holdingsValue(u); }
+function dayChange(u){
+  let amount = 0;
+  for(const t in u.holdings){
+    const s = stockByTicker(t);
+    if(!s) continue;
+    amount += u.holdings[t].shares * (s.p - s.base);
+  }
+  const pv = portfolioValue(u);
+  const prev = pv - amount;
+  const pct = prev > 0 ? (amount / prev) * 100 : 0;
+  return { amount, pct };
+}
+function trimTransactions(u){ if(u.transactions.length > 60) u.transactions = u.transactions.slice(0, 60); }
+
+/* ============================================================
+   6. SPARKLINE
+   ============================================================ */
+function sparkSVG(vals, color){
+  const id = 'sg' + (++sparkSeq);
+  const w = 300, h = 90;
+  const min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+  const range = (max - min) || 1;
+  const pts = vals.map((v, i) => [(i / (vals.length - 1)) * w, h - 6 - ((v - min) / range) * (h - 18)]);
+  const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  const area = line + ' L ' + w + ' ' + h + ' L 0 ' + h + ' Z';
+  return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" class="spark">'
+    + '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1">'
+    + '<stop offset="0%" stop-color="' + color + '" stop-opacity=".22"/>'
+    + '<stop offset="100%" stop-color="' + color + '" stop-opacity="0"/>'
+    + '</linearGradient></defs>'
+    + '<path d="' + area + '" fill="url(#' + id + ')"/>'
+    + '<path class="line" d="' + line + '" fill="none" stroke="' + color + '" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>'
+    + '</svg>';
+}
+function portfolioSpark(u){
+  const pv = portfolioValue(u);
+  const N = 32;
+  const seed = hashStr(currentUser || 'pulse') || 7;
+  const raw = [];
+  let cum = 0;
+  for(let i = 0; i < N; i++){ cum += (rand(seed * 13 + i * 7) - 0.47) * 0.024; raw.push(cum); }
+  const last = raw[N - 1];
+  const vals = raw.map(r => Math.max(0.01, pv * (1 + (r - last))));
+  vals[N - 1] = pv;
+  return sparkSVG(vals, '#00D632');
+}
+
+/* ============================================================
+   7. TOAST & SHEETS
+   ============================================================ */
+const app = document.getElementById('app');
+const sheetRoot = document.getElementById('sheet-root');
+
+function toast(msg){
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 320); }, 2500);
+}
+
+function openSheet(html){
+  sheetRoot.innerHTML = '<div class="sheet-backdrop"><div class="sheet"><div class="sheet-grab"></div>' + html + '</div></div>';
+  document.body.classList.add('no-scroll');
+}
+function setSheet(html){
+  const s = sheetRoot.querySelector('.sheet');
+  if(s){ s.innerHTML = '<div class="sheet-grab"></div>' + html; s.scrollTop = 0; }
+}
+function closeSheet(){
+  sheetRoot.innerHTML = '';
+  document.body.classList.remove('no-scroll');
+}
+sheetRoot.addEventListener('click', e => {
+  if(e.target.classList.contains('sheet-backdrop')) closeSheet();
+  if(e.target.closest('[data-close]')) closeSheet();
+});
+
+function sheetHeader(title, backAttr){
+  return '<div class="sheet-head">'
+    + (backAttr ? '<button class="sheet-back" ' + backAttr + '>' + icon('back', 19) + '</button>' : '')
+    + '<h2>' + title + '</h2>'
+    + '<button class="sheet-close" data-close>×</button>'
+    + '</div>';
+}
+
+/* ============================================================
+   8. AUTH
+   ============================================================ */
+function renderAuth(){
+  app.innerHTML =
+    '<div class="auth"><div class="auth-inner">'
+    + '<div class="brand"><div class="brand-mark">P</div><h1>Pulse</h1><p>Invest, send, and grow your money.</p></div>'
+    + '<div class="auth-tabs">'
+    +   '<button data-auth-tab="signup" class="' + (authMode === 'signup' ? 'on' : '') + '">Sign up</button>'
+    +   '<button data-auth-tab="login" class="' + (authMode === 'login' ? 'on' : '') + '">Log in</button>'
+    + '</div>'
+    + '<div class="auth-form">'
+    +   '<label>Username</label>'
+    +   '<input id="auth-user" placeholder="yourname" maxlength="20" autocomplete="username" spellcheck="false">'
+    +   '<label>Password</label>'
+    +   '<input id="auth-pass" type="password" placeholder="••••••••" autocomplete="current-password">'
+    +   '<div class="auth-err" id="auth-err"></div>'
+    +   '<button class="btn-primary btn-big" id="auth-submit">' + (authMode === 'signup' ? 'Create account' : 'Log in') + '</button>'
+    + '</div>'
+    + '<p class="auth-note">' + (authMode === 'signup' ? 'New accounts start with $10,000 in demo cash.' : 'Welcome back to Pulse.') + '</p>'
+    + '</div></div>';
+}
+
+function switchAuthMode(mode){
+  const u = document.getElementById('auth-user'), p = document.getElementById('auth-pass');
+  const uv = u ? u.value : '', pv = p ? p.value : '';
+  authMode = mode;
+  renderAuth();
+  const u2 = document.getElementById('auth-user'), p2 = document.getElementById('auth-pass');
+  if(u2) u2.value = uv;
+  if(p2) p2.value = pv;
+}
+
+function newUser(password){
+  return {
+    password: hashPass(password),
+    balance: START_CASH,
+    holdings: {},
+    transactions: [{ id: uid(), type:'deposit', name:'Welcome bonus', amount: START_CASH, date: Date.now() }],
+    createdAt: Date.now(),
+    withdrawalError: DEFAULT_WITHDRAWAL_ERROR
+  };
+}
+
+function signIn(name){
+  currentUser = name;
+  sessionStorage.setItem(SESSION_KEY, name);
+  page = 'home';
+  render();
+  toast('Welcome, @' + name);
+}
+function signOut(){
+  currentUser = null;
+  vaultUnlocked = false;
+  sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(VAULT_KEY);
+  sessionStorage.removeItem(IMP_KEY);
+  page = 'home';
+  closeSheet();
+  renderAuth();
+}
+
+/* ============================================================
+   9. FEED & LIVE NOTIFICATIONS
+   ============================================================ */
+const NEWS_SOURCES = ['Bloomberg','Reuters','CNBC','MarketWatch','Barron\'s','The Street'];
+const NEWS_TEMPLATES = [
+  (s, pct) => s.n + ' ' + (pct >= 0 ? 'surges' : 'slides') + ' ' + Math.abs(pct).toFixed(1) + '% in today\'s session',
+  (s) => 'Analysts raise ' + s.t + ' price target after strong guidance',
+  (s) => s.n + ' reports better-than-expected quarterly earnings',
+  (s) => 'Institutional investors increase stake in ' + s.t,
+  (s) => s.sector + ' sector rallies as markets open higher',
+  (s) => 'Breaking: ' + s.n + ' announces new strategic partnership',
+  (s) => s.n + ' expands buyback program, shares climb'
+];
+
+function addFeed(item){
+  feed.unshift(Object.assign({ id: uid(), time: Date.now() }, item));
+  feed = feed.slice(0, 14);
+  renderFeed();
+}
+
+function genNews(){
+  const s = stocks[Math.floor(Math.random() * stocks.length)];
+  const chg = (s.p - s.base) / s.base * 100;
+  const tmpl = NEWS_TEMPLATES[Math.floor(Math.random() * NEWS_TEMPLATES.length)];
+  addFeed({
+    type:'news',
+    sentiment: chg >= 0 ? 'up' : 'down',
+    ticker: s.t,
+    text: tmpl(s, chg),
+    source: NEWS_SOURCES[Math.floor(Math.random() * NEWS_SOURCES.length)]
+  });
+}
+
+function seedTrade(){
+  const seedNames = Object.keys(users).filter(n => users[n].isSeed);
+  if(!seedNames.length) return;
+  const name = seedNames[Math.floor(Math.random() * seedNames.length)];
+  const u = users[name];
+  if(!u) return;
+  const s = stocks[Math.floor(Math.random() * stocks.length)];
+  if(!s) return;
+
+  const big = Math.random() < 0.35;
+  const budget = big ? (5000 + Math.random() * 40000) : (100 + Math.random() * 2200);
+  const canAfford = u.balance >= budget;
+  const hasShares = u.holdings[s.t] && u.holdings[s.t].shares > 0;
+
+  let type;
+  if(hasShares && (!canAfford || Math.random() < 0.4)) type = 'sell';
+  else if(canAfford) type = 'buy';
+  else return;
+
+  if(type === 'buy'){
+    const shares = budget / s.p;
+    u.balance -= budget;
+    const h = u.holdings[s.t] || { shares:0, avg:0 };
+    const total = h.shares + shares;
+    h.avg = ((h.shares * h.avg) + budget) / total;
+    h.shares = total;
+    u.holdings[s.t] = h;
+    u.transactions.unshift({ id: uid(), type:'buy', ticker:s.t, name:s.n, amount:-budget, shares, price:s.p, date: Date.now() });
+    trimTransactions(u);
+    addFeed({ type:'trade', sentiment:'up', ticker:s.t, text:'@' + name + ' bought ' + fmtShares(shares) + ' ' + s.t, value: budget, user: name });
+    if(big) showTradePop(name, 'bought', s.t, budget, 'up');
+  } else {
+    const h = u.holdings[s.t];
+    const sellShares = Math.min(h.shares, budget / s.p);
+    const value = sellShares * s.p;
+    h.shares -= sellShares;
+    if(h.shares < 0.000001) delete u.holdings[s.t];
+    u.balance += value;
+    u.transactions.unshift({ id: uid(), type:'sell', ticker:s.t, name:s.n, amount:value, shares:sellShares, price:s.p, date: Date.now() });
+    trimTransactions(u);
+    addFeed({ type:'trade', sentiment:'down', ticker:s.t, text:'@' + name + ' sold ' + fmtShares(sellShares) + ' ' + s.t, value, user: name });
+    if(big) showTradePop(name, 'sold', s.t, value, 'down');
+  }
+  saveUsers();
+}
+
+function showTradePop(user, action, ticker, value, dir){
+  if(!currentUser || page !== 'home' || sheetRoot.querySelector('.sheet')) return;
+  if(currentPop){ currentPop.remove(); currentPop = null; }
+  const el = document.createElement('div');
+  el.className = 'trade-pop';
+  el.innerHTML = '<div class="trade-pop-ic ' + (dir === 'down' ? 'down' : '') + '">' + (dir === 'down' ? '↓' : '↑') + '</div>'
+    + '<div><b>@' + esc(user) + ' just ' + action + ' ' + esc(ticker) + '</b>'
+    + '<span>' + money(value) + ' · whale alert</span></div>';
+  document.body.appendChild(el);
+  currentPop = el;
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => { el.remove(); if(currentPop === el) currentPop = null; }, 520);
+  }, 4200);
+}
+
+function feedHTML(){
+  if(!feed.length) return '<p class="muted small" style="padding:14px 0">Loading market activity…</p>';
+  return feed.slice(0, 5).map(item => {
+    const isNews = item.type === 'news';
+    const cls = isNews ? 'news' : (item.sentiment === 'down' ? 'tdown' : 'tup');
+    const ic = isNews ? icon('news', 17) : icon(item.sentiment === 'down' ? 'down' : 'up', 17);
+    const sub = isNews
+      ? (item.source || 'Markets') + ' · ' + timeAgo(item.time)
+      : money(item.value || 0) + ' · ' + timeAgo(item.time);
+    return '<button class="feed-item" ' + (item.ticker ? 'data-stock="' + item.ticker + '"' : '') + '>'
+      + '<span class="feed-ic ' + cls + '">' + ic + '</span>'
+      + '<span class="feed-body"><b>' + esc(item.text) + '</b><span>' + esc(sub) + '</span></span>'
+      + '</button>';
+  }).join('');
+}
+function renderFeed(){
+  const el = document.getElementById('pulse-feed');
+  if(el) el.innerHTML = feedHTML();
+}
+
+/* ============================================================
+   10. COMPONENTS
+   ============================================================ */
+function ratingClass(r){
+  if(r === 'Strong Buy') return 'rating-strong';
+  if(r === 'Buy') return 'rating-buy';
+  if(r === 'Stable') return 'rating-stable';
+  return 'rating-hold';
+}
+function stockRow(s){
+  const chg = (s.p - s.base) / s.base * 100;
+  const up = chg >= 0;
+  return '<button class="stock-row" data-stock="' + s.t + '">'
+    + '<span class="stock-logo" style="background:' + s.color + '">' + esc(s.t[0]) + '</span>'
+    + '<span class="stock-main"><b>' + esc(s.t) + '</b><span>' + esc(s.n) + '</span></span>'
+    + '<span class="stock-right">'
+    +   '<b data-live="' + s.t + '">' + money(s.p) + '</b>'
+    +   '<span class="chg ' + (up ? 'up' : 'down') + '" data-chg="' + s.t + '">' + (up ? '+' : '') + chg.toFixed(2) + '%</span>'
+    + '</span></button>';
+}
+function hotCard(s, mode){
+  const chg = (s.p - s.base) / s.base * 100;
+  const up = chg >= 0;
+  const attr = mode === 'detail' ? 'data-stock="' + s.t + '"' : 'data-buy-pick="' + s.t + '"';
+  return '<button class="hot-card" ' + attr + '>'
+    + '<span class="hot-logo" style="background:' + s.color + '">' + esc(s.t[0]) + '</span>'
+    + '<b class="hot-ticker">' + esc(s.t) + '</b>'
+    + '<span class="hot-price" data-live="' + s.t + '">' + money(s.p) + '</span>'
+    + '<span class="chg ' + (up ? 'up' : 'down') + '" data-chg="' + s.t + '">' + (up ? '+' : '') + chg.toFixed(2) + '%</span>'
+    + '<span class="rating ' + ratingClass(s.rating) + '">' + esc(s.rating) + '</span>'
+    + '</button>';
+}
+function tickerHTML(){
+  const items = stocks.map(s => {
+    const chg = (s.p - s.base) / s.base * 100;
+    return '<span class="ticker-item"><b>' + esc(s.t) + '</b>'
+      + '<span data-live="' + s.t + '">' + money(s.p) + '</span>'
+      + '<span class="chg ' + (chg >= 0 ? 'up' : 'down') + '" data-chg="' + s.t + '">' + (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%</span></span>';
+  }).join('');
+  return '<div class="ticker"><div class="ticker-track">' + items + items + '</div></div>';
+}
+
+/* ============================================================
+   11. PAGES
+   ============================================================ */
+function pageView(){
+  switch(page){
+    case 'markets':  return marketsView();
+    case 'activity': return activityView();
+    case 'settings': return settingsView();
+    case 'vault':    return vaultView();
+    default:         return homeView();
+  }
+}
+
+function homeView(){
+  const u = users[currentUser];
+  const pv = portfolioValue(u);
+  const hv = holdingsValue(u);
+  const dc = dayChange(u);
+  const holdings = Object.keys(u.holdings).filter(t => u.holdings[t].shares > 0);
+
+  const movers = stocks.slice().sort((a, b) => {
+    return Math.abs((b.p - b.base) / b.base) - Math.abs((a.p - a.base) / a.base);
+  }).slice(0, 4);
+
+  return ''
+    + '<header class="topbar"><div><div class="hi">' + greeting() + '</div><h2>@' + esc(currentUser) + '</h2></div>'
+    +   '<div class="avatar">' + esc(currentUser[0].toUpperCase()) + '</div></header>'
+    + tickerHTML()
+    + '<section class="hero">'
+    +   '<div class="hero-label">Portfolio value</div>'
+    +   '<div class="hero-value" data-portfolio>' + money(pv) + '</div>'
+    +   '<div class="hero-change ' + (dc.amount >= 0 ? '' : 'down') + '" data-daychange>'
+    +     (dc.amount >= 0 ? '+' : '−') + money(Math.abs(dc.amount)) + ' (' + (dc.pct >= 0 ? '+' : '') + dc.pct.toFixed(2) + '%) today</div>'
+    +   portfolioSpark(u)
+    +   '<div class="hero-split">'
+    +     '<div><span>Cash</span><b data-cash>' + money(u.balance) + '</b></div>'
+    +     '<div><span>Invested</span><b data-invested>' + money(hv) + '</b></div>'
+    +   '</div>'
+    + '</section>'
+    + '<section class="quick">'
+    +   '<button class="q green" data-action="deposit"><i>' + icon('plus', 22) + '</i><b>Add cash</b></button>'
+    +   '<button class="q" data-action="withdraw"><i>' + icon('withdraw', 22) + '</i><b>Withdraw</b></button>'
+    +   '<button class="q" data-action="send"><i>' + icon('send', 21) + '</i><b>Send</b></button>'
+    +   '<button class="q" data-action="receive"><i>' + icon('receive', 22) + '</i><b>Receive</b></button>'
+    +   '<button class="q" data-action="buy"><i>' + icon('markets', 22) + '</i><b>Buy</b></button>'
+    + '</section>'
+    + '<section class="section">'
+    +   '<div class="sec-head"><h3>Pulse live</h3><span class="live"><i></i>Live</span></div>'
+    +   '<div class="feed-list" id="pulse-feed">' + feedHTML() + '</div>'
+    + '</section>'
+    + '<section class="section">'
+    +   '<div class="sec-head"><h3>Your holdings</h3><button data-nav="markets">Markets</button></div>'
+    +   (holdings.length
+        ? '<div class="stock-list">' + holdings.map(t => {
+            const s = stockByTicker(t);
+            if(!s) return '';
+            const h = u.holdings[t];
+            const posChg = h.avg > 0 ? ((s.p - h.avg) / h.avg) * 100 : 0;
+            return '<button class="stock-row" data-stock="' + t + '">'
+              + '<span class="stock-logo" style="background:' + s.color + '">' + esc(t[0]) + '</span>'
+              + '<span class="stock-main"><b>' + esc(t) + '</b><span>' + fmtShares(h.shares) + ' shares · ' + money(h.avg) + '</span></span>'
+              + '<span class="stock-right"><b data-holdval="' + t + '">' + money(h.shares * s.p) + '</b>'
+              +   '<span class="chg ' + (posChg >= 0 ? 'up' : 'down') + '">' + (posChg >= 0 ? '+' : '') + posChg.toFixed(1) + '%</span></span>'
+              + '</button>';
+          }).join('') + '</div>'
+        : '<div class="empty"><div class="big-ic">' + icon('markets', 24) + '</div>'
+          + '<b>No investments yet</b><p>Buy your first stock to start building.</p>'
+          + '<button class="btn-primary" style="padding:13px" data-action="buy">Buy stocks</button></div>')
+    + '</section>'
+    + '<section class="section" style="padding-bottom:20px">'
+    +   '<div class="sec-head"><h3>Market movers</h3><button data-nav="markets">See all</button></div>'
+    +   '<div class="stock-list">' + movers.map(stockRow).join('') + '</div>'
+    + '</section>';
+}
+
+function marketsView(){
+  const hot = stocks.slice().sort((a, b) => {
+    return Math.abs((b.p - b.base) / b.base) - Math.abs((a.p - a.base) / a.base);
+  }).slice(0, 5);
+  return ''
+    + '<header class="page-head" style="padding-bottom:10px"><h1>Markets</h1><span class="live"><i></i>Live</span></header>'
+    + '<div style="padding:0 20px">'
+    +   '<div class="search">' + icon('search', 19) + '<input data-search-input data-target="markets-list" placeholder="Search stocks, crypto, sectors" spellcheck="false"></div>'
+    + '</div>'
+    + '<div class="section-label" style="padding:0 20px;margin-top:16px">Hot right now</div>'
+    + '<div class="hot-scroll">' + hot.map(s => hotCard(s, 'detail')).join('') + '</div>'
+    + '<div class="section-label" style="padding:0 20px">All markets</div>'
+    + '<div class="stock-list" id="markets-list" style="padding:0 20px 20px">'
+    +   stocks.map(s => '<div data-search="' + esc((s.t + ' ' + s.n + ' ' + s.sector).toLowerCase()) + '">' + stockRow(s) + '</div>').join('')
+    + '</div>';
+}
+
+function activityView(){
+  const u = users[currentUser];
+  const txs = u.transactions.slice().sort((a, b) => b.date - a.date);
+  const meta = {
+    buy:      { label:'Bought',     cls:'out',     ic:'↓' },
+    sell:     { label:'Sold',       cls:'in',      ic:'↑' },
+    deposit:  { label:'Added cash', cls:'in',      ic:'+' },
+    withdraw: { label:'Withdrew',   cls:'out',     ic:'−' },
+    send:     { label:'Sent',       cls:'out',     ic:'↗' },
+    receive:  { label:'Received',   cls:'in',      ic:'↙' },
+    request:  { label:'Requested',  cls:'neutral', ic:'…' }
+  };
+  return ''
+    + '<header class="page-head"><h1>Activity</h1></header>'
+    + '<div style="padding:0 20px 24px">'
+    + (txs.length
+      ? '<div class="list" style="margin:0">' + txs.map(t => {
+          const m = meta[t.type] || meta.deposit;
+          const pos = Number(t.amount) >= 0;
+          let sub = fmtDate(t.date);
+          if(t.type === 'buy' || t.type === 'sell') sub = fmtShares(t.shares) + ' shares · ' + fmtDate(t.date);
+          return '<div class="tx-row" style="padding:14px 16px">'
+            + '<div class="tx-ic ' + m.cls + '">' + m.ic + '</div>'
+            + '<div class="tx-main"><b>' + m.label + (t.ticker ? ' ' + esc(t.ticker) : (t.name ? ' ' + esc(t.name) : '')) + '</b>'
+            + '<span>' + esc(sub) + '</span></div>'
+            + '<div class="tx-amt ' + (pos ? 'pos' : '') + '">' + (pos ? '+' : '−') + money(Math.abs(t.amount)) + '</div></div>';
+        }).join('') + '</div>'
+      : '<div class="empty"><div class="big-ic">' + icon('activity', 24) + '</div><b>No activity yet</b><p>Your transactions will show up here.</p></div>')
+    + '</div>';
+}
+
+function settingsView(){
+  const u = users[currentUser];
+  const since = new Date(u.createdAt || Date.now()).toLocaleDateString('en-US', { month:'long', year:'numeric' });
+  return ''
+    + '<header class="page-head"><h1>Settings</h1></header>'
+    + '<div class="profile-card"><div class="avatar big">' + esc(currentUser[0].toUpperCase()) + '</div>'
+    +   '<div style="flex:1;min-width:0"><h2>@' + esc(currentUser) + '</h2><p>Member since ' + esc(since) + '</p></div></div>'
+    + '<div class="list">'
+    +   '<button data-action="account"><span class="ic">' + icon('user', 19) + '</span>Account details<span class="chev">' + icon('chev', 18) + '</span></button>'
+    +   '<button data-action="security"><span class="ic">' + icon('shield', 19) + '</span>Security<span class="chev">' + icon('chev', 18) + '</span></button>'
+    +   '<button data-action="notifications"><span class="ic">' + icon('info', 19) + '</span>Notifications<span class="chev">' + icon('chev', 18) + '</span></button>'
+    +   '<button data-action="signout" class="danger"><span class="ic">' + icon('logout', 19) + '</span>Sign out</button>'
+    + '</div>'
+    + '<div class="vault-card" data-action="vault">'
+    +   '<div class="vic">' + icon('lock', 22) + '</div>'
+    +   '<div><b>Vault</b><p>Admin controls · code protected</p></div>'
+    +   '<span class="arrow">' + icon('chev', 20) + '</span>'
+    + '</div>'
+    + '<p class="muted small center" style="margin:26px 20px 24px">Pulse · v1.1 · Demo build</p>';
+}
+
+function vaultView(){
+  if(!vaultUnlocked){ page = 'settings'; return settingsView(); }
+  const names = Object.keys(users).sort((a, b) => (users[b].createdAt || 0) - (users[a].createdAt || 0));
+  return ''
+    + '<header class="page-head">'
+    +   '<button class="back-btn" data-nav="settings">' + icon('back', 20) + '</button>'
+    +   '<h1>Vault</h1><span class="live"><i></i>Admin</span>'
+    + '</header>'
+    + '<div class="vault-section">'
+    +   '<h3>All accounts (' + names.length + ')</h3>'
+    +   names.map(vaultUserCard).join('')
+    + '</div>'
+    + '<div class="vault-section">'
+    +   '<h3>Stock prices</h3>'
+    +   stocks.map(s => '<div class="vault-stock"><b>' + esc(s.t) + '</b>'
+    +     '<input type="number" step="0.01" min="0.01" data-admin-price="' + esc(s.t) + '" value="' + Number(s.p).toFixed(2) + '"></div>').join('')
+    + '</div>'
+    + '<div class="vault-danger">'
+    +   '<b>Danger zone</b><p>Wipe every account and reset all stock prices. This cannot be undone.</p>'
+    +   '<button class="btn-danger" data-action="reset-all">Reset all data</button>'
+    + '</div><div class="spacer"></div>';
+}
+
+function vaultUserCard(name){
+  const u = users[name];
+  const pv = portfolioValue(u);
+  const holdCount = Object.keys(u.holdings).filter(t => u.holdings[t].shares > 0).length;
+  return '<div class="vault-user">'
+    + '<div class="vault-user-head">'
+    +   '<div class="avatar" style="width:38px;height:38px;font-size:14px">' + esc(name[0].toUpperCase()) + '</div>'
+    +   '<div style="flex:1;min-width:0"><b>@' + esc(name) + (u.isSeed ? '<span class="seed-badge">demo</span>' : '') + '</b>'
+    +     '<span>' + holdCount + ' holdings · ' + money(pv) + ' total</span></div>'
+    + '</div>'
+    + '<label>Cash balance</label>'
+    + '<input type="number" step="0.01" data-admin-balance="' + esc(name) + '" value="' + Number(u.balance).toFixed(2) + '">'
+    + '<label>Withdrawal error message</label>'
+    + '<input type="text" data-admin-error="' + esc(name) + '" value="' + esc(u.withdrawalError || DEFAULT_WITHDRAWAL_ERROR) + '">'
+    + '<div class="vault-user-actions">'
+    +   '<button data-admin-holdings="' + esc(name) + '">Portfolio</button>'
+    +   '<button data-admin-login="' + esc(name) + '">Log in as</button>'
+    +   '<button class="danger" data-admin-delete="' + esc(name) + '">Delete</button>'
+    + '</div></div>';
+}
+
+/* ============================================================
+   12. RENDER
+   ============================================================ */
+function impersonateBanner(){
+  const from = sessionStorage.getItem(IMP_KEY);
+  if(!from || from === currentUser || !users[from]) return '';
+  return '<div class="imp-banner"><span>Viewing as <b>@' + esc(currentUser) + '</b></span>'
+    + '<button data-action="return-admin">Return to @' + esc(from) + '</button></div>';
+}
+
+function render(){
+  if(!currentUser){ renderAuth(); return; }
+  if(page === 'vault' && !vaultUnlocked) page = 'settings';
+  if(!users[currentUser]){ signOut(); return; }
+  app.innerHTML = impersonateBanner() + pageView() + tabbar();
+  paintLive();
+}
+
+function tabbar(){
+  const active = page === 'vault' ? 'settings' : page;
+  const tabs = [['home','Home','home'],['markets','Markets','markets'],['activity','Activity','activity'],['settings','Settings','settings']];
+  return '<nav class="tabbar">' + tabs.map(([id, label, ic]) =>
+    '<button class="tab ' + (active === id ? 'on' : '') + '" data-nav="' + id + '">' + icon(ic, 22) + '<span>' + label + '</span></button>'
+  ).join('') + '</nav>';
+}
+
+/* ============================================================
+   13. LIVE PAINT
+   ============================================================ */
+function flash(el, dir){
+  if(el.closest('.ticker')) return;
+  el.classList.remove('flash-up','flash-down');
+  void el.offsetWidth;
+  el.classList.add(dir === 'up' ? 'flash-up' : 'flash-down');
+  setTimeout(() => el.classList.remove('flash-up','flash-down'), 820);
+}
+
+function paintLive(){
+  if(!currentUser) return;
+  const u = users[currentUser];
+  if(!u) return;
+
+  document.querySelectorAll('[data-live]').forEach(el => {
+    const s = stockByTicker(el.dataset.live);
+    if(!s) return;
+    const prev = parseFloat(el.dataset.prev || s.p);
+    const txt = money(s.p);
+    if(el.textContent !== txt){
+      el.textContent = txt;
+      if(Math.abs(s.p - prev) > 0.00001) flash(el, s.p > prev ? 'up' : 'down');
+    }
+    el.dataset.prev = s.p;
+  });
+
+  document.querySelectorAll('[data-chg]').forEach(el => {
+    const s = stockByTicker(el.dataset.chg);
+    if(!s) return;
+    const chg = (s.p - s.base) / s.base * 100;
+    el.textContent = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+    el.classList.toggle('up', chg >= 0);
+    el.classList.toggle('down', chg < 0);
+  });
+
+  const pv = portfolioValue(u);
+  document.querySelectorAll('[data-portfolio]').forEach(el => { el.textContent = money(pv); });
+
+  const dc = dayChange(u);
+  document.querySelectorAll('[data-daychange]').forEach(el => {
+    el.textContent = (dc.amount >= 0 ? '+' : '−') + money(Math.abs(dc.amount)) + ' (' + (dc.pct >= 0 ? '+' : '') + dc.pct.toFixed(2) + '%) today';
+    el.classList.toggle('down', dc.amount < 0);
+  });
+
+  document.querySelectorAll('[data-cash]').forEach(el => { el.textContent = money(u.balance); });
+  document.querySelectorAll('[data-invested]').forEach(el => { el.textContent = money(holdingsValue(u)); });
+
+  document.querySelectorAll('[data-holdval]').forEach(el => {
+    const t = el.dataset.holdval;
+    const h = u.holdings[t];
+    const s = stockByTicker(t);
+    if(!h || !s) return;
+    el.textContent = money(h.shares * s.p);
+  });
+}
+
+/* ============================================================
+   14. TRADE EXECUTION
+   ============================================================ */
+function executeBuy(t, amount){
+  const u = users[currentUser];
+  const s = stockByTicker(t);
+  if(!s) return { error: 'Stock not found' };
+  if(!(amount > 0)) return { error: 'Enter a valid amount' };
+  if(amount > u.balance + 0.0001) return { error: 'Insufficient cash balance' };
+  const shares = amount / s.p;
+  u.balance -= amount;
+  const h = u.holdings[t] || { shares:0, avg:0 };
+  const total = h.shares + shares;
+  h.avg = ((h.shares * h.avg) + amount) / total;
+  h.shares = total;
+  u.holdings[t] = h;
+  u.transactions.unshift({ id: uid(), type:'buy', ticker:t, name:s.n, amount:-amount, shares, price:s.p, date: Date.now() });
+  trimTransactions(u);
+  saveUsers();
+  return { shares };
+}
+function executeSell(t, amount){
+  const u = users[currentUser];
+  const s = stockByTicker(t);
+  const h = u.holdings[t];
+  if(!s || !h || h.shares <= 0) return { error: 'You don\'t own this stock' };
+  const maxValue = h.shares * s.p;
+  if(amount > maxValue + 0.01) return { error: 'Not enough shares' };
+  const shares = amount / s.p;
+  h.shares = Math.max(0, h.shares - shares);
+  if(h.shares < 0.000001) delete u.holdings[t];
+  u.balance += amount;
+  u.transactions.unshift({ id: uid(), type:'sell', ticker:t, name:s.n, amount, shares, price:s.p, date: Date.now() });
+  trimTransactions(u);
+  saveUsers();
+  return { shares };
+}
+function executeSend(to, amount){
+  const u = users[currentUser];
+  if(!users[to]) return { error: 'No account found for @' + to };
+  if(to === currentUser) return { error: 'You can\'t send to yourself' };
+  if(!(amount > 0)) return { error: 'Enter a valid amount' };
+  if(amount > u.balance + 0.0001) return { error: 'Insufficient cash balance' };
+  u.balance -= amount;
+  users[to].balance += amount;
+  u.transactions.unshift({ id: uid(), type:'send', name:'@' + to, amount:-amount, date: Date.now() });
+  users[to].transactions.unshift({ id: uid(), type:'receive', name:'@' + currentUser, amount, date: Date.now() });
+  trimTransactions(u); trimTransactions(users[to]);
+  saveUsers();
+  return {};
+}
+function executeDeposit(amount){
+  const u = users[currentUser];
+  if(!(amount > 0)) return { error: 'Enter a valid amount' };
+  u.balance += amount;
+  u.transactions.unshift({ id: uid(), type:'deposit', name:'Bank transfer', amount, date: Date.now() });
+  trimTransactions(u);
+  saveUsers();
+  return {};
+}
+
+/* ============================================================
+   15. SHEET FLOWS
+   ============================================================ */
+function showProcessing(text){
+  setSheet('<div class="processing"><div class="spinner"></div><h2>' + text + '</h2><p>Securing your request…</p></div>');
+}
+function showSuccess(title, sub){
+  setSheet('<div class="success"><div class="success-check">' + icon('check', 38) + '</div>'
+    + '<h2>' + title + '</h2><p>' + sub + '</p>'
+    + '<button class="btn-primary btn-big" data-close>Done</button></div>');
+}
+
+/* -------- BUY -------- */
+function openBuyPicker(){
+  const hot = stocks.slice().sort((a, b) => Math.abs((b.p - b.base) / b.base) - Math.abs((a.p - a.base) / a.base)).slice(0, 5);
+  openSheet(
+    sheetHeader('Buy')
+    + '<div class="search">' + icon('search', 19) + '<input data-search-input data-target="buy-list" placeholder="Search stocks and crypto" spellcheck="false"></div>'
+    + '<div class="section-label">Hot right now</div>'
+    + '<div class="hot-scroll" style="margin:0 -20px;padding:2px 20px 6px">' + hot.map(s => hotCard(s, 'buy')).join('') + '</div>'
+    + '<div class="section-label">All markets</div>'
+    + '<div class="stock-list" id="buy-list">' + stocks.map(s => '<div data-search="' + esc((s.t + ' ' + s.n + ' ' + s.sector).toLowerCase()) + '">' + stockRow(s) + '</div>').join('') + '</div>'
+  );
+}
+function openBuyAmount(t){
+  const s = stockByTicker(t);
+  const u = users[currentUser];
+  if(!s) return;
+  setSheet(
+    sheetHeader('Buy ' + s.t, 'data-buy-picker')
+    + '<div class="amount-stock"><span class="stock-logo" style="background:' + s.color + '">' + esc(s.t[0]) + '</span>'
+    +   '<div><b>' + esc(s.n) + '</b><span>' + esc(s.t) + ' · ' + money(s.p) + '</span></div></div>'
+    + '<div class="amount-display"><span>$</span><input id="buy-amount" data-amount-input data-ticker="' + esc(s.t) + '" inputmode="decimal" placeholder="0" autocomplete="off"></div>'
+    + '<p class="amount-hint">≈ <b id="shares-est">0</b> shares</p>'
+    + '<div class="quick-amounts"><button data-quick-amt="50">$50</button><button data-quick-amt="100">$100</button><button data-quick-amt="500">$500</button><button data-quick-amt="1000">$1,000</button></div>'
+    + '<button class="btn-primary btn-big" data-confirm-buy="' + esc(s.t) + '">Buy ' + esc(s.t) + '</button>'
+    + '<p class="balance-hint">Cash available ' + money(u.balance) + '</p>'
+  );
+  const input = document.getElementById('buy-amount');
+  if(input) setTimeout(() => input.focus(), 120);
+}
+function openSellAmount(t){
+  const s = stockByTicker(t);
+  const u = users[currentUser];
+  const h = u.holdings[t];
+  if(!s) return;
+  if(!h || h.shares <= 0){ toast('You don\'t own any ' + t); return; }
+  const maxValue = h.shares * s.p;
+  setSheet(
+    sheetHeader('Sell ' + s.t, 'data-stock-detail="' + s.t + '"')
+    + '<div class="amount-stock"><span class="stock-logo" style="background:' + s.color + '">' + esc(s.t[0]) + '</span>'
+    +   '<div><b>' + esc(s.n) + '</b><span>' + esc(s.t) + ' · ' + money(s.p) + '</span></div></div>'
+    + '<div class="amount-display"><span>$</span><input id="sell-amount" data-amount-input data-ticker="' + esc(s.t) + '" inputmode="decimal" placeholder="0" autocomplete="off"></div>'
+    + '<p class="amount-hint">≈ <b id="shares-est">0</b> shares</p>'
+    + '<div class="quick-amounts">'
+    +   '<button data-quick-amt="' + Math.min(50, maxValue).toFixed(2) + '">$50</button>'
+    +   '<button data-quick-amt="' + Math.min(100, maxValue).toFixed(2) + '">$100</button>'
+    +   '<button data-quick-amt="' + maxValue.toFixed(2) + '">Sell all</button></div>'
+    + '<button class="btn-primary btn-big" data-confirm-sell="' + esc(s.t) + '">Sell ' + esc(s.t) + '</button>'
+    + '<p class="balance-hint">You own ' + fmtShares(h.shares) + ' shares (' + money(maxValue) + ')</p>'
+  );
+  const input = document.getElementById('sell-amount');
+  if(input) setTimeout(() => input.focus(), 120);
+}
+function openStockDetail(t){
+  const s = stockByTicker(t);
+  const u = users[currentUser];
+  if(!s) return;
+  const h = u.holdings[t];
+  const owns = h && h.shares > 0;
+
+  const vals = [];
+  const seed = hashStr(t);
+  let cum = 0;
+  for(let i = 0; i < 30; i++){ cum += (rand(seed + i * 3) - 0.47) * 0.03; vals.push(cum); }
+  const last = vals[vals.length - 1];
+  const priced = vals.map(v => Math.max(0.01, s.p * (1 + (v - last))));
+  const spark = sparkSVG(priced, (s.p >= s.base) ? '#00D632' : '#FF3B30');
+  const chg = (s.p - s.base) / s.base * 100;
+
+  openSheet(
+    sheetHeader(s.t)
+    + '<div class="amount-stock"><span class="stock-logo" style="background:' + s.color + '">' + esc(s.t[0]) + '</span>'
+    +   '<div><b>' + esc(s.n) + '</b><span>' + esc(s.sector) + ' · ' + esc(s.rating) + '</span></div></div>'
+    + '<div style="text-align:center;margin:4px 0 2px">'
+    +   '<div style="font-size:38px;font-weight:800;letter-spacing:-.045em;font-variant-numeric:tabular-nums" data-live="' + s.t + '">' + money(s.p) + '</div>'
+    +   '<div class="chg ' + (chg >= 0 ? 'up' : 'down') + '" data-chg="' + s.t + '" style="font-size:14.5px;font-weight:800;margin-top:2px">' + (chg >= 0 ? '+' : '') + chg.toFixed(2) + '% today</div></div>'
+    + '<div style="margin:12px 0 6px">' + spark + '</div>'
+    + '<div style="display:flex;gap:12px;margin:14px 0 20px">'
+    +   '<div style="flex:1;background:var(--soft);border-radius:14px;padding:14px"><div style="font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Rating</div>'
+    +     '<div style="margin-top:6px"><span class="rating ' + ratingClass(s.rating) + '">' + esc(s.rating) + '</span></div></div>'
+    +   '<div style="flex:1;background:var(--soft);border-radius:14px;padding:14px"><div style="font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">You own</div>'
+    +     '<div style="font-size:15px;font-weight:800;margin-top:4px">' + (owns ? fmtShares(h.shares) + ' sh · ' + money(h.shares * s.p) : 'None') + '</div></div>'
+    + '</div>'
+    + '<div style="display:flex;gap:10px">'
+    +   '<button class="btn-ghost" style="flex:1" data-sell="' + s.t + '">Sell</button>'
+    +   '<button class="btn-primary" style="flex:1.4" data-buy="' + s.t + '">Buy</button></div>'
+  );
+}
+
+/* -------- SEND / RECEIVE -------- */
+function openSend(){
+  const u = users[currentUser];
+  openSheet(
+    sheetHeader('Send cash')
+    + '<p class="sheet-sub">Send instantly to another Pulse account.</p>'
+    + '<label class="field-label">To</label>'
+    + '<input id="send-to" class="field-input" placeholder="@username" autocomplete="off" spellcheck="false">'
+    + '<label class="field-label">Amount</label>'
+    + '<div class="amount-display"><span>$</span><input id="send-amount" inputmode="decimal" placeholder="0"></div>'
+    + '<div class="quick-amounts"><button data-quick-amt="25">$25</button><button data-quick-amt="50">$50</button><button data-quick-amt="100">$100</button></div>'
+    + '<button class="btn-primary btn-big" data-confirm-send>Send</button>'
+    + '<p class="balance-hint">Cash available ' + money(u.balance) + '</p>'
+  );
+  const el = document.getElementById('send-to');
+  if(el) setTimeout(() => el.focus(), 120);
+}
+function openReceive(){
+  const u = users[currentUser];
+  openSheet(
+    sheetHeader('Receive')
+    + '<div class="receive-card"><div style="width:60px;height:60px;border-radius:18px;background:#fff;display:grid;place-items:center;margin:0 auto;box-shadow:0 8px 20px rgba(0,0,0,.07);color:var(--ink)">' + icon('qr', 30) + '</div>'
+    + '<div class="receive-handle">@' + esc(currentUser) + '</div><p>Share your handle to receive cash</p></div>'
+    + '<label class="field-label">Request from a user</label>'
+    + '<input id="req-to" class="field-input" placeholder="@username" autocomplete="off" spellcheck="false">'
+    + '<label class="field-label">Amount</label>'
+    + '<div class="amount-display"><span>$</span><input id="req-amount" inputmode="decimal" placeholder="0"></div>'
+    + '<button class="btn-primary btn-big" data-confirm-request>Send request</button>'
+    + '<p class="balance-hint">Cash available ' + money(u.balance) + '</p>'
+  );
+}
+
+/* -------- ADD CASH -------- */
+function openDeposit(){
+  const u = users[currentUser];
+  const prefill = pendingDeposit && pendingDeposit.amount ? pendingDeposit.amount : '';
+  openSheet(
+    sheetHeader('Add cash')
+    + '<p class="sheet-sub">Move money into your Pulse account.</p>'
+    + '<div class="amount-display"><span>$</span><input id="dep-amount" inputmode="decimal" placeholder="0" value="' + prefill + '"></div>'
+    + '<div class="quick-amounts"><button data-quick-amt="100">$100</button><button data-quick-amt="500">$500</button><button data-quick-amt="1000">$1,000</button></div>'
+    + '<button class="btn-primary btn-big" data-dep-step1>Continue</button>'
+    + '<p class="balance-hint">Cash available ' + money(u.balance) + '</p>'
+  );
+  const el = document.getElementById('dep-amount');
+  if(el) setTimeout(() => el.focus(), 120);
+}
+function openDepositMethod(){
+  const amount = pendingDeposit.amount;
+  setSheet(
+    sheetHeader('Add ' + money(amount), 'data-dep-back')
+    + '<p class="sheet-sub">Select a funding source.</p>'
+    + '<div class="method-grid">'
+    + Object.keys(DEPOSIT_METHODS).map(k =>
+        '<button class="method-btn" data-dep-method="' + k + '"><span class="m-ic">' + (DEPOSIT_METHODS[k].icon || icon('wallet', 18)) + '</span>' + esc(DEPOSIT_METHODS[k].label) + '</button>'
+      ).join('')
+    + '</div>'
+    + '<p class="balance-hint">Amount: ' + money(amount) + '</p>'
+  );
+}
+function openDepositDetails(){
+  const m = DEPOSIT_METHODS[pendingDeposit.method];
+  let body = '';
+  if(m.fields.length === 0){
+    body = '<div class="empty" style="margin:10px 0 6px"><div class="big-ic">' + icon('wallet', 24) + '</div>'
+      + '<b>' + esc(m.label) + '</b><p>You\'ll confirm with ' + esc(m.label) + ' on the next step.</p></div>';
+  } else {
+    body = m.fields.map(f => {
+      if(f.type === 'select'){
+        return '<label class="field-label">' + esc(f.label) + '</label>'
+          + '<select class="field-input" data-dep-field="' + f.name + '">' + f.options.map(o => '<option>' + esc(o) + '</option>').join('') + '</select>';
+      }
+      return '<label class="field-label">' + esc(f.label) + '</label>'
+        + '<input class="field-input" data-dep-field="' + f.name + '" type="' + (f.type || 'text') + '" placeholder="' + esc(f.placeholder || '') + '"'
+        + (f.maxlength ? ' maxlength="' + f.maxlength + '"' : '') + '>';
+    }).join('');
+  }
+  setSheet(
+    sheetHeader(m.label, 'data-dep-method-back')
+    + '<p class="sheet-sub">Enter your ' + esc(m.label) + ' details.</p>'
+    + body
+    + '<button class="btn-primary btn-big" style="margin-top:20px" data-dep-submit>Continue</button>'
+    + '<p class="balance-hint">Amount: ' + money(pendingDeposit.amount) + '</p>'
+  );
+  const first = sheetRoot.querySelector('[data-dep-field]');
+  if(first) setTimeout(() => first.focus(), 160);
+}
+function submitDepositDetails(){
+  const fields = sheetRoot.querySelectorAll('[data-dep-field]');
+  let valid = true;
+  fields.forEach(f => {
+    if(!f.value.trim()){
+      f.classList.add('shake');
+      setTimeout(() => f.classList.remove('shake'), 420);
+      valid = false;
+    }
+  });
+  if(!valid) return;
+  showProcessing('Processing payment…');
+  setTimeout(() => {
+    executeDeposit(pendingDeposit.amount);
+    render();
+    showSuccess('Cash added', '<b>' + money(pendingDeposit.amount) + '</b> is now available in your Pulse account.');
+    pendingDeposit = null;
+  }, 2000);
+}
+
+/* -------- WITHDRAW -------- */
+function openWithdraw(){
+  const u = users[currentUser];
+  const prefill = pendingWithdraw && pendingWithdraw.amount ? pendingWithdraw.amount : '';
+  openSheet(
+    sheetHeader('Withdraw')
+    + '<p class="sheet-sub">Cash out to an external account.</p>'
+    + '<div class="amount-display"><span>$</span><input id="wd-amount" inputmode="decimal" placeholder="0" value="' + prefill + '"></div>'
+    + '<div class="quick-amounts"><button data-quick-amt="50">$50</button><button data-quick-amt="100">$100</button><button data-quick-amt="' + Number(u.balance).toFixed(2) + '">Max</button></div>'
+    + '<button class="btn-primary btn-big" data-wd-step1>Continue</button>'
+    + '<p class="balance-hint">Cash available ' + money(u.balance) + '</p>'
+  );
+  const el = document.getElementById('wd-amount');
+  if(el) setTimeout(() => el.focus(), 120);
+}
+function openWithdrawMethod(){
+  setSheet(
+    sheetHeader('Withdraw ' + money(pendingWithdraw.amount), 'data-wd-back')
+    + '<p class="sheet-sub">Select where to send your cash.</p>'
+    + '<div class="method-grid">'
+    + Object.keys(WITHDRAW_METHODS).map(k =>
+        '<button class="method-btn" data-wd-method="' + k + '"><span class="m-ic">' + (WITHDRAW_METHODS[k].icon || '$') + '</span>' + esc(WITHDRAW_METHODS[k].label) + '</button>'
+      ).join('')
+    + '</div>'
+    + '<p class="balance-hint">Amount: ' + money(pendingWithdraw.amount) + '</p>'
+  );
+}
+function openWithdrawDetails(){
+  const m = WITHDRAW_METHODS[pendingWithdraw.method];
+  const body = m.fields.map(f => {
+    if(f.type === 'select'){
+      return '<label class="field-label">' + esc(f.label) + '</label>'
+        + '<select class="field-input" data-wd-field="' + f.name + '">' + f.options.map(o => '<option>' + esc(o) + '</option>').join('') + '</select>';
+    }
+    return '<label class="field-label">' + esc(f.label) + '</label>'
+      + '<input class="field-input" data-wd-field="' + f.name + '" type="' + (f.type || 'text') + '" placeholder="' + esc(f.placeholder || '') + '"'
+      + (f.maxlength ? ' maxlength="' + f.maxlength + '"' : '') + '>';
+  }).join('');
+  setSheet(
+    sheetHeader(m.label, 'data-wd-method-back')
+    + '<p class="sheet-sub">Enter your ' + esc(m.label) + ' details.</p>'
+    + body
+    + '<button class="btn-primary btn-big" style="margin-top:20px" data-wd-submit>Continue</button>'
+    + '<p class="balance-hint">Amount: ' + money(pendingWithdraw.amount) + '</p>'
+  );
+  const first = sheetRoot.querySelector('[data-wd-field]');
+  if(first) setTimeout(() => first.focus(), 160);
+}
+function submitWithdrawDetails(){
+  const fields = sheetRoot.querySelectorAll('[data-wd-field]');
+  let valid = true;
+  fields.forEach(f => {
+    if(!f.value.trim()){
+      f.classList.add('shake');
+      setTimeout(() => f.classList.remove('shake'), 420);
+      valid = false;
+    }
+  });
+  if(!valid) return;
+
+  showProcessing('Processing withdrawal…');
+  setTimeout(() => {
+    const u = users[currentUser];
+    const err = u.withdrawalError || DEFAULT_WITHDRAWAL_ERROR;
+    setSheet(
+      '<div class="error-state">'
+      + '<div class="error-x">✕</div>'
+      + '<h2>Withdrawal rejected</h2>'
+      + '<p>' + esc(err) + '</p>'
+      + '<button class="btn-ghost btn-big" data-close-to-home>Back to home</button>'
+      + '</div>'
+    );
+  }, 2800);
+}
+
+/* -------- VAULT GATE -------- */
+function openVaultGate(){
+  if(vaultUnlocked){ page = 'vault'; render(); window.scrollTo(0, 0); return; }
+  openSheet(
+    sheetHeader('Vault')
+    + '<p class="sheet-sub">Enter the 4-digit admin code to continue.</p>'
+    + '<div class="amount-display centered"><input id="vault-code" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off"></div>'
+    + '<div class="auth-err center" id="vault-err"></div>'
+    + '<button class="btn-primary btn-big" data-confirm-vault>Unlock vault</button>'
+    + '<p class="balance-hint">Restricted access · admins only</p>'
+  );
+  const el = document.getElementById('vault-code');
+  if(el) setTimeout(() => el.focus(), 150);
+}
+
+/* -------- ADMIN PORTFOLIO EDITOR -------- */
+function openAdminHoldings(name){
+  const u = users[name];
+  if(!u) return;
+  const held = Object.keys(u.holdings).filter(t => u.holdings[t].shares > 0);
+  const notHeld = stocks.filter(s => !held.includes(s.t));
+
+  let holdingsHTML = '';
+  if(held.length){
+    holdingsHTML = held.map(t => {
+      const s = stockByTicker(t);
+      const h = u.holdings[t];
+      if(!s) return '';
+      return '<div class="holding-row">'
+        + '<span class="stock-logo sm" style="background:' + s.color + '">' + esc(t[0]) + '</span>'
+        + '<div class="holding-main"><b>' + esc(t) + '</b><span>' + money(s.p) + ' · ' + esc(s.n) + '</span></div>'
+        + '<input type="number" step="0.0001" min="0" data-hold-shares="' + esc(name) + ':' + esc(t) + '" value="' + Number(h.shares).toFixed(4) + '">'
+        + '<button class="hx" data-hold-remove="' + esc(name) + ':' + esc(t) + '">×</button></div>';
+    }).join('');
+  } else {
+    holdingsHTML = '<p class="muted small" style="padding:8px 0">No holdings</p>';
+  }
+
+  openSheet(
+    sheetHeader('Portfolio · @' + esc(name))
+    + '<div class="amount-stock" style="margin-bottom:10px">'
+    +   '<div style="flex:1"><b>Cash</b><span>' + money(u.balance) + '</span></div>'
+    +   '<div style="text-align:right"><b>Total</b><span>' + money(portfolioValue(u)) + '</span></div></div>'
+    + '<div class="section-label">Holdings</div>'
+    + holdingsHTML
+    + '<div class="section-label">Add holding</div>'
+    + '<div style="display:flex;gap:8px;align-items:stretch">'
+    +   '<select id="add-hold-ticker" class="field-input" style="flex:1;padding:12px 14px;font-size:14px">'
+    +     notHeld.map(s => '<option value="' + s.t + '">' + s.t + ' — ' + esc(s.n) + '</option>').join('')
+    +   '</select>'
+    +   '<input id="add-hold-shares" type="number" step="0.0001" min="0" placeholder="Shares" class="field-input" style="width:105px;padding:12px;font-size:14px">'
+    +   '<button class="btn-primary" style="width:auto;padding:0 18px;flex-shrink:0" data-hold-add="' + esc(name) + '">+</button>'
+    + '</div>'
+    + '<button class="btn-ghost btn-big" style="margin-top:22px" data-close>Done</button>'
+  );
+}
+
+/* ============================================================
+   16. EVENT DELEGATION
+   ============================================================ */
+document.addEventListener('click', e => {
+  /* auth */
+  const tab = e.target.closest('[data-auth-tab]');
+  if(tab){ switchAuthMode(tab.dataset.authTab); return; }
+
+  if(e.target.closest('#auth-submit')){
+    const userEl = document.getElementById('auth-user');
+    const passEl = document.getElementById('auth-pass');
+    const errEl  = document.getElementById('auth-err');
+    const name = (userEl.value || '').trim().toLowerCase().replace(/\s+/g, '');
+    const pass = passEl.value || '';
+
+    if(!/^[a-z0-9_]{3,20}$/.test(name)){
+      errEl.textContent = 'Username: 3–20 chars, letters, numbers or _';
+      userEl.classList.add('shake');
+      setTimeout(() => userEl.classList.remove('shake'), 420);
+      return;
+    }
+    if(pass.length < 4){
+      errEl.textContent = 'Password must be at least 4 characters';
+      passEl.classList.add('shake');
+      setTimeout(() => passEl.classList.remove('shake'), 420);
+      return;
+    }
+    if(authMode === 'signup'){
+      if(users[name]){ errEl.textContent = 'That username is already taken'; return; }
+      users[name] = newUser(pass);
+      saveUsers();
+      signIn(name);
+    } else {
+      if(!users[name]){ errEl.textContent = 'No account found for @' + name; return; }
+      if(users[name].password !== hashPass(pass)){
+        errEl.textContent = 'Incorrect password';
+        passEl.classList.add('shake');
+        setTimeout(() => passEl.classList.remove('shake'), 420);
+        return;
+      }
+      signIn(name);
+    }
+    return;
+  }
+
+  /* nav */
+  const nav = e.target.closest('[data-nav]');
+  if(nav){ page = nav.dataset.nav; closeSheet(); render(); window.scrollTo(0, 0); return; }
+
+  /* actions */
+  const act = e.target.closest('[data-action]');
+  if(act){
+    const a = act.dataset.action;
+    if(a === 'buy'){ openBuyPicker(); return; }
+    if(a === 'deposit'){ pendingDeposit = null; openDeposit(); return; }
+    if(a === 'withdraw'){ pendingWithdraw = null; openWithdraw(); return; }
+    if(a === 'send'){ openSend(); return; }
+    if(a === 'receive'){ openReceive(); return; }
+    if(a === 'vault'){ openVaultGate(); return; }
+    if(a === 'signout'){ signOut(); return; }
+    if(a === 'account'){ toast('Account details — coming soon'); return; }
+    if(a === 'security'){ toast('Security settings — coming soon'); return; }
+    if(a === 'notifications'){ toast('You have no new notifications'); return; }
+    if(a === 'reset-all'){ resetAllData(); return; }
+    if(a === 'return-admin'){
+      const from = sessionStorage.getItem(IMP_KEY);
+      if(from && users[from]){
+        currentUser = from;
+        sessionStorage.setItem(SESSION_KEY, from);
+        sessionStorage.removeItem(IMP_KEY);
+        page = 'vault';
+        render();
+        window.scrollTo(0, 0);
+        toast('Back to admin');
+      }
+      return;
+    }
+  }
+
+  /* stock detail */
+  const stockEl = e.target.closest('[data-stock]');
+  if(stockEl){ openStockDetail(stockEl.dataset.stock); return; }
+
+  /* buy picker hot cards */
+  const pick = e.target.closest('[data-buy-pick]');
+  if(pick){ openBuyAmount(pick.dataset.buyPick); return; }
+
+  /* back to buy picker */
+  if(e.target.closest('[data-buy-picker]')){ openBuyPicker(); return; }
+
+  /* back to stock detail */
+  const sd = e.target.closest('[data-stock-detail]');
+  if(sd){ openStockDetail(sd.dataset.stockDetail); return; }
+
+  /* buy / sell from detail */
+  const buyBtn = e.target.closest('[data-buy]');
+  if(buyBtn){ openBuyAmount(buyBtn.dataset.buy); return; }
+  const sellBtn = e.target.closest('[data-sell]');
+  if(sellBtn){ openSellAmount(sellBtn.dataset.sell); return; }
+
+  /* quick amounts */
+  const qa = e.target.closest('[data-quick-amt]');
+  if(qa){
+    const val = parseFloat(qa.dataset.quickAmt);
+    const input = document.getElementById('buy-amount')
+      || document.getElementById('sell-amount')
+      || document.getElementById('send-amount')
+      || document.getElementById('dep-amount')
+      || document.getElementById('wd-amount')
+      || document.getElementById('req-amount');
+    if(input && !isNaN(val)){
+      input.value = val.toFixed(2);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    return;
+  }
+
+  /* confirm buy */
+  const cBuy = e.target.closest('[data-confirm-buy]');
+  if(cBuy){
+    const t = cBuy.dataset.confirmBuy;
+    const input = document.getElementById('buy-amount');
+    const amount = parseFloat(input.value || '0');
+    const u = users[currentUser];
+    if(!amount || amount <= 0){ input.classList.add('shake'); setTimeout(() => input.classList.remove('shake'), 420); return; }
+    if(amount > u.balance){ toast('Insufficient cash balance'); input.classList.add('shake'); setTimeout(() => input.classList.remove('shake'), 420); return; }
+    showProcessing('Buying ' + t + '…');
+    setTimeout(() => {
+      const res = executeBuy(t, amount);
+      if(res.error){ toast(res.error); return; }
+      render();
+      showSuccess('Purchase complete', 'You bought <b>' + fmtShares(res.shares) + ' shares</b> of ' + t + ' for ' + money(amount) + '.');
+    }, 1400);
+    return;
+  }
+
+  /* confirm sell */
+  const cSell = e.target.closest('[data-confirm-sell]');
+  if(cSell){
+    const t = cSell.dataset.confirmSell;
+    const input = document.getElementById('sell-amount');
+    const amount = parseFloat(input.value || '0');
+    if(!amount || amount <= 0){ input.classList.add('shake'); setTimeout(() => input.classList.remove('shake'), 420); return; }
+    showProcessing('Selling ' + t + '…');
+    setTimeout(() => {
+      const res = executeSell(t, amount);
+      if(res.error){ toast(res.error); return; }
+      render();
+      showSuccess('Sale complete', 'You sold <b>' + fmtShares(res.shares) + ' shares</b> of ' + t + ' for ' + money(amount) + '.');
+    }, 1300);
+    return;
+  }
+
+  /* confirm send */
+  if(e.target.closest('[data-confirm-send]')){
+    const toEl = document.getElementById('send-to');
+    const amtEl = document.getElementById('send-amount');
+    const to = (toEl.value || '').trim().toLowerCase().replace(/^@/, '').replace(/\s+/g, '');
+    const amount = parseFloat(amtEl.value || '0');
+    if(!to){ toEl.classList.add('shake'); setTimeout(() => toEl.classList.remove('shake'), 420); return; }
+    if(!amount || amount <= 0){ amtEl.classList.add('shake'); setTimeout(() => amtEl.classList.remove('shake'), 420); return; }
+    showProcessing('Sending cash…');
+    setTimeout(() => {
+      const res = executeSend(to, amount);
+      if(res.error){ toast(res.error); setTimeout(() => openSend(), 900); return; }
+      render();
+      showSuccess('Sent!', 'You sent <b>' + money(amount) + '</b> to @' + esc(to) + '.');
+    }, 1300);
+    return;
+  }
+
+  /* confirm request */
+  if(e.target.closest('[data-confirm-request]')){
+    const toEl = document.getElementById('req-to');
+    const amtEl = document.getElementById('req-amount');
+    const to = (toEl.value || '').trim().toLowerCase().replace(/^@/, '');
+    const amount = parseFloat(amtEl.value || '0');
+    if(!to){ toEl.classList.add('shake'); setTimeout(() => toEl.classList.remove('shake'), 420); return; }
+    if(!amount || amount <= 0){ amtEl.classList.add('shake'); setTimeout(() => amtEl.classList.remove('shake'), 420); return; }
+    if(!users[to]){ toast('No account found for @' + to); return; }
+    const u = users[currentUser];
+    u.transactions.unshift({ id: uid(), type:'request', name:'@' + to, amount, date: Date.now() });
+    trimTransactions(u);
+    saveUsers(); render();
+    showSuccess('Request sent', 'You requested <b>' + money(amount) + '</b> from @' + esc(to) + '.');
+    return;
+  }
+
+  /* ADD CASH step 1 */
+  if(e.target.closest('[data-dep-step1]')){
+    const input = document.getElementById('dep-amount');
+    const amount = parseFloat(input.value || '0');
+    if(!amount || amount <= 0){ input.classList.add('shake'); setTimeout(() => input.classList.remove('shake'), 420); return; }
+    pendingDeposit = { amount };
+    openDepositMethod();
+    return;
+  }
+  /* ADD CASH method picked */
+  const dpm = e.target.closest('[data-dep-method]');
+  if(dpm){
+    pendingDeposit.method = dpm.dataset.depMethod;
+    openDepositDetails();
+    return;
+  }
+  /* ADD CASH back */
+  if(e.target.closest('[data-dep-back]')){ openDeposit(); return; }
+  if(e.target.closest('[data-dep-method-back]')){ openDepositMethod(); return; }
+  /* ADD CASH submit */
+  if(e.target.closest('[data-dep-submit]')){ submitDepositDetails(); return; }
+
+  /* WITHDRAW step 1 */
+  if(e.target.closest('[data-wd-step1]')){
+    const u = users[currentUser];
+    const input = document.getElementById('wd-amount');
+    const amount = parseFloat(input.value || '0');
+    if(!amount || amount <= 0){ input.classList.add('shake'); setTimeout(() => input.classList.remove('shake'), 420); return; }
+    if(amount > u.balance){ toast('Insufficient cash balance'); input.classList.add('shake'); setTimeout(() => input.classList.remove('shake'), 420); return; }
+    pendingWithdraw = { amount };
+    openWithdrawMethod();
+    return;
+  }
+  const wdm = e.target.closest('[data-wd-method]');
+  if(wdm){
+    pendingWithdraw.method = wdm.dataset.wdMethod;
+    openWithdrawDetails();
+    return;
+  }
+  if(e.target.closest('[data-wd-back]')){ openWithdraw(); return; }
+  if(e.target.closest('[data-wd-method-back]')){ openWithdrawMethod(); return; }
+  if(e.target.closest('[data-wd-submit]')){ submitWithdrawDetails(); return; }
+
+  /* withdraw error — back to home */
+  if(e.target.closest('[data-close-to-home]')){
+    pendingWithdraw = null;
+    closeSheet();
+    page = 'home';
+    render();
+    window.scrollTo(0, 0);
+    return;
+  }
+
+  /* vault gate */
+  if(e.target.closest('[data-confirm-vault]')){
+    const input = document.getElementById('vault-code');
+    const code = (input.value || '').trim();
+    const err = document.getElementById('vault-err');
+    if(code === ADMIN_CODE){
+      vaultUnlocked = true;
+      sessionStorage.setItem(VAULT_KEY, '1');
+      closeSheet();
+      page = 'vault';
+      render();
+      window.scrollTo(0, 0);
+      toast('Vault unlocked');
+    } else {
+      err.textContent = 'Incorrect code';
+      input.classList.add('shake');
+      setTimeout(() => { input.classList.remove('shake'); err.textContent = ''; }, 700);
+      input.value = '';
+      input.focus();
+    }
+    return;
+  }
+
+  /* admin actions */
+  const ah = e.target.closest('[data-admin-holdings]');
+  if(ah){ openAdminHoldings(ah.dataset.adminHoldings); return; }
+
+  const al = e.target.closest('[data-admin-login]');
+  if(al){
+    const target = al.dataset.adminLogin;
+    if(!users[target]) return;
+    if(target === currentUser){ toast('Already logged in as @' + target); return; }
+    if(!sessionStorage.getItem(IMP_KEY)) sessionStorage.setItem(IMP_KEY, currentUser);
+    currentUser = target;
+    sessionStorage.setItem(SESSION_KEY, target);
+    page = 'home';
+    closeSheet();
+    render();
+    window.scrollTo(0, 0);
+    toast('Viewing as @' + target);
+    return;
+  }
+
+  const ad = e.target.closest('[data-admin-delete]');
+  if(ad){
+    const name = ad.dataset.adminDelete;
+    if(confirm('Delete @' + name + ' and all their data?')){
+      delete users[name];
+      saveUsers();
+      if(name === currentUser){ signOut(); return; }
+      render();
+      toast('@' + name + ' deleted');
+    }
+    return;
+  }
+
+  /* holdings editor */
+  const hr = e.target.closest('[data-hold-remove]');
+  if(hr){
+    const [n, t] = hr.dataset.holdRemove.split(':');
+    if(users[n]){
+      delete users[n].holdings[t];
+      saveUsers();
+      openAdminHoldings(n);
+      toast('Removed ' + t);
+    }
+    return;
+  }
+  const ha = e.target.closest('[data-hold-add]');
+  if(ha){
+    const n = ha.dataset.holdAdd;
+    const sel = document.getElementById('add-hold-ticker');
+    const inp = document.getElementById('add-hold-shares');
+    const t = sel ? sel.value : null;
+    const sh = parseFloat(inp ? inp.value : '0');
+    if(!t){ toast('Pick a stock'); return; }
+    if(!sh || sh <= 0){ if(inp){ inp.classList.add('shake'); setTimeout(() => inp.classList.remove('shake'), 420); } return; }
+    const s = stockByTicker(t);
+    if(!users[n] || !s) return;
+    users[n].holdings[t] = { shares: sh, avg: s.p };
+    saveUsers();
+    openAdminHoldings(n);
+    toast('Added ' + t);
+    return;
+  }
+});
+
+/* input handlers */
+document.addEventListener('input', e => {
+  if(e.target.matches('[data-search-input]')){
+    const q = (e.target.value || '').trim().toLowerCase();
+    const list = document.getElementById(e.target.dataset.target);
+    if(!list) return;
+    list.querySelectorAll('[data-search]').forEach(el => {
+      el.style.display = el.dataset.search.indexOf(q) !== -1 ? '' : 'none';
+    });
+    return;
+  }
+  if(e.target.matches('[data-amount-input]')){
+    const t = e.target.dataset.ticker;
+    const s = stockByTicker(t);
+    const est = document.getElementById('shares-est');
+    if(s && est){
+      const amt = parseFloat(e.target.value) || 0;
+      est.textContent = fmtShares(amt / s.p);
+    }
+  }
+});
+
+/* change handlers */
+document.addEventListener('change', e => {
+  if(e.target.matches('[data-admin-balance]')){
+    const name = e.target.dataset.adminBalance;
+    const v = parseFloat(e.target.value);
+    if(!users[name] || isNaN(v)) return;
+    users[name].balance = v;
+    saveUsers();
+    toast('Balance updated for @' + name);
+  }
+  if(e.target.matches('[data-admin-error]')){
+    const name = e.target.dataset.adminError;
+    if(!users[name]) return;
+    users[name].withdrawalError = e.target.value || DEFAULT_WITHDRAWAL_ERROR;
+    saveUsers();
+    toast('Error message updated for @' + name);
+  }
+  if(e.target.matches('[data-admin-price]')){
+    const t = e.target.dataset.adminPrice;
+    const v = parseFloat(e.target.value);
+    const s = stockByTicker(t);
+    if(!s || isNaN(v) || v <= 0) return;
+    s.p = v; s.base = v;
+    saveStocks();
+    paintLive();
+    toast(t + ' price updated');
+  }
+  if(e.target.matches('[data-hold-shares]')){
+    const [n, t] = e.target.dataset.holdShares.split(':');
+    const v = parseFloat(e.target.value);
+    if(!users[n] || !users[n].holdings[t]) return;
+    if(isNaN(v) || v <= 0){ delete users[n].holdings[t]; }
+    else { users[n].holdings[t].shares = v; }
+    saveUsers();
+  }
+});
+
+/* reset */
+function resetAllData(){
+  if(!confirm('Reset every account and all stock prices? This cannot be undone.')) return;
+  users = JSON.parse(JSON.stringify(SEED_USERS));
+  saveUsers();
+  stocks = DEFAULT_STOCKS.map(s => Object.assign({}, s, { base: s.p }));
+  saveStocks();
+  vaultUnlocked = false;
+  sessionStorage.removeItem(VAULT_KEY);
+  sessionStorage.removeItem(IMP_KEY);
+  signOut();
+  toast('All data reset');
+}
+
+/* ============================================================
+   17. LIVE MARKET & FEED LOOPS
+   ============================================================ */
+let tickCount = 0;
+setInterval(() => {
+  stocks.forEach(s => {
+    if(s.t === 'USDT'){ s.p = 1 + (Math.random() - 0.5) * 0.0008; }
+    else {
+      const vol = s.p > 1000 ? 0.0022 : 0.0035;
+      const drift = (Math.random() - 0.5) * vol;
+      s.p = Math.max(0.0001, s.p * (1 + drift));
+    }
+  });
+  tickCount++;
+  if(tickCount % 5 === 0) saveStocks();
+  if(currentUser) paintLive();
+}, 2200);
+
+setInterval(() => {
+  if(!currentUser) return;
+  genNews();
+}, 9000);
+
+setInterval(() => {
+  if(!currentUser) return;
+  seedTrade();
+}, 6500);
+
+/* ============================================================
+   18. BOOT
+   ============================================================ */
+if(currentUser && users[currentUser]){
+  genNews();
+  genNews();
+  seedTrade();
+}
+render();
+</script>
+</body>
+</html>
