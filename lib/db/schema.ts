@@ -10,6 +10,7 @@ export const user = pgTable('user', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
+  username: text('username').notNull().unique('user_username_unique'),
   emailVerified: boolean('emailVerified').notNull().default(false),
   image: text('image'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
@@ -67,6 +68,15 @@ export const pulseProfiles = pgTable('pulse_profiles', {
 
 export const pulseAdminAttempts = pgTable('pulse_admin_attempts', {
   userId: text('userId').primaryKey(),
+  failedAttempts: integer('failedAttempts').notNull().default(0),
+  lockedUntil: timestamp('lockedUntil', { withTimezone: true }),
+  updatedAt: timestamp('updatedAt', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+})
+
+export const pulseLoginAttempts = pgTable('pulse_login_attempts', {
+  username: text('username').primaryKey(),
   failedAttempts: integer('failedAttempts').notNull().default(0),
   lockedUntil: timestamp('lockedUntil', { withTimezone: true }),
   updatedAt: timestamp('updatedAt', { withTimezone: true })

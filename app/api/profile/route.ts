@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
@@ -54,9 +54,9 @@ export async function GET(request: Request) {
   }
 
   const [identity] = await db
-    .select({ name: user.name, email: user.email })
+    .select({ name: user.name })
     .from(user)
-    .where(and(eq(user.id, session.user.id), eq(user.email, session.user.email)))
+    .where(eq(user.id, session.user.id))
     .limit(1)
 
   if (!identity) {
@@ -67,7 +67,6 @@ export async function GET(request: Request) {
     {
       id: session.user.id,
       name: identity.name,
-      email: identity.email,
       username: profile.username,
       balanceCents: profile.balanceCents,
       createdAt: profile.createdAt.toISOString(),

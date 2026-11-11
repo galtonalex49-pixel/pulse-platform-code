@@ -30,7 +30,6 @@ export async function GET(request: Request) {
     .select({
       id: user.id,
       name: user.name,
-      email: user.email,
       username: pulseProfiles.username,
       balanceCents: pulseProfiles.balanceCents,
       createdAt: user.createdAt,

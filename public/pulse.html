@@ -656,39 +656,36 @@ function sheetHeader(title, backAttr){
    8. AUTH
    ============================================================ */
 function renderAuth(){
+  const isSignup = authMode === 'signup';
   app.innerHTML =
     '<div class="auth"><div class="auth-inner">'
     + '<div class="brand"><div class="brand-mark">P</div><h1>Pulse</h1><p>Explore markets and manage your portfolio.</p></div>'
     + '<div class="auth-tabs">'
-    +   '<button data-auth-tab="signup" class="' + (authMode === 'signup' ? 'on' : '') + '">Sign up</button>'
-    +   '<button data-auth-tab="login" class="' + (authMode === 'login' ? 'on' : '') + '">Log in</button>'
+    +   '<button data-auth-tab="signup" class="' + (isSignup ? 'on' : '') + '">Sign up</button>'
+    +   '<button data-auth-tab="login" class="' + (!isSignup ? 'on' : '') + '">Log in</button>'
     + '</div>'
-    + '<form class="auth-form" id="auth-form">'
-    +   (authMode === 'signup' ? '<label for="auth-name">Full name</label><input id="auth-name" name="name" placeholder="Your name" maxlength="80" autocomplete="name" required>' : '')
-    +   '<label for="auth-email">Email address</label>'
-    +   '<input id="auth-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required>'
-    +   '<label for="auth-pass">Password</label>'
-    +   '<input id="auth-pass" name="password" type="password" placeholder="At least 8 characters" minlength="8" maxlength="128" autocomplete="' + (authMode === 'signup' ? 'new-password' : 'current-password') + '" required>'
+    + '<form class="auth-form" id="auth-form" autocomplete="off">'
+    +   '<label for="auth-username">Username</label>'
+    +   '<input id="auth-username" name="username" type="text" placeholder="Choose a username" minlength="3" maxlength="30" pattern="[A-Za-z0-9_.]{3,30}" autocomplete="username" autocapitalize="none" spellcheck="false" required>'
+    +   '<label for="auth-pin">4-digit PIN</label>'
+    +   '<input id="auth-pin" name="password" type="password" placeholder="Enter your PIN" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="' + (isSignup ? 'new-password' : 'current-password') + '" required>'
     +   '<div class="auth-err" id="auth-err" role="alert" aria-live="polite"></div>'
-    +   '<button class="btn-primary btn-big" id="auth-submit" type="submit">' + (authMode === 'signup' ? 'Create account' : 'Log in') + '</button>'
+    +   '<button class="btn-primary btn-big" id="auth-submit" type="submit">' + (isSignup ? 'Create account' : 'Log in') + '</button>'
     + '</form>'
-    + '<p class="auth-note">' + (authMode === 'signup' ? 'New accounts receive a $2,000 virtual portfolio credit. These are not real funds.' : 'Welcome back to Pulse.') + '</p>'
+    + '<p class="auth-note">' + (isSignup ? 'Keep your PIN private. Email recovery is not available.' : 'Welcome back to Pulse.') + '</p>'
     + '</div></div>';
 }
 
 function switchAuthMode(mode){
-  const name = document.getElementById('auth-name');
-  const email = document.getElementById('auth-email');
-  const pass = document.getElementById('auth-pass');
-  const values = { name:name ? name.value : '', email:email ? email.value : '', pass:pass ? pass.value : '' };
+  const username = document.getElementById('auth-username');
+  const pin = document.getElementById('auth-pin');
+  const values = { username:username ? username.value : '', pin:pin ? pin.value : '' };
   authMode = mode;
   renderAuth();
-  const nameNext = document.getElementById('auth-name');
-  const emailNext = document.getElementById('auth-email');
-  const passNext = document.getElementById('auth-pass');
-  if(nameNext) nameNext.value = values.name;
-  if(emailNext) emailNext.value = values.email;
-  if(passNext) passNext.value = values.pass;
+  const usernameNext = document.getElementById('auth-username');
+  const pinNext = document.getElementById('auth-pin');
+  if(usernameNext) usernameNext.value = values.username;
+  if(pinNext) pinNext.value = values.pin;
 }
 
 function applyProfile(profile, isNew){
@@ -697,7 +694,6 @@ function applyProfile(profile, isNew){
   users = {
     [username]: {
       name: profile.name,
-      email: profile.email,
       balance: Number(profile.balanceCents || 0) / 100,
       holdings: {},
       transactions: isNew ? [{ id:uid(), type:'deposit', name:'Virtual welcome credit', amount:START_CASH, date:createdAt }] : [],
@@ -720,22 +716,26 @@ function renderWelcome(profile){
 
 async function submitAuth(event){
   event.preventDefault();
-  const name = (document.getElementById('auth-name')?.value || '').trim();
-  const email = (document.getElementById('auth-email')?.value || '').trim().toLowerCase();
-  const password = document.getElementById('auth-pass')?.value || '';
+  const username = (document.getElementById('auth-username')?.value || '').trim().toLowerCase();
+  const pin = document.getElementById('auth-pin')?.value || '';
   const error = document.getElementById('auth-err');
   const button = document.getElementById('auth-submit');
-  if(authMode === 'signup' && name.length < 2){ error.textContent = 'Enter your full name to continue.'; return; }
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ error.textContent = 'Enter a valid email address.'; return; }
-  if(password.length < 8){ error.textContent = 'Use a password with at least 8 characters.'; return; }
+  if(!/^[a-z0-9_][a-z0-9_.]{1,28}[a-z0-9_]$/i.test(username)){
+    error.textContent = 'Use 3–30 letters, numbers, underscores, or periods.';
+    return;
+  }
+  if(!/^\d{4}$/.test(pin)){
+    error.textContent = 'Enter a PIN with exactly four digits.';
+    return;
+  }
   button.disabled = true;
   button.textContent = authMode === 'signup' ? 'Creating your account…' : 'Signing in…';
   error.textContent = '';
   try{
     const isNew = authMode === 'signup';
-    const response = await fetch('/api/auth/' + (isNew ? 'sign-up/email' : 'sign-in/email'), {
+    const response = await fetch('/api/auth/' + (isNew ? 'sign-up/email' : 'sign-in/username'), {
       method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(isNew ? { name, email, password } : { email, password })
+      body:JSON.stringify({ username, password:pin })
     });
     if(!response.ok) throw new Error('auth');
     const profileResponse = await fetch('/api/profile', { credentials:'same-origin', cache:'no-store' });
@@ -754,14 +754,12 @@ async function submitAuth(event){
     renderAuth();
     const errorNext = document.getElementById('auth-err');
     if(errorNext) errorNext.textContent = authMode === 'signup'
-      ? 'We could not create your account. Check your details and try again.'
-      : 'We could not sign you in. Check your email and password.';
-    const emailNext = document.getElementById('auth-email');
-    const passNext = document.getElementById('auth-pass');
-    if(emailNext) emailNext.value = email;
-    if(passNext) passNext.value = password;
-    const nameNext = document.getElementById('auth-name');
-    if(nameNext) nameNext.value = name;
+      ? 'Could not create your account. Try a different username and PIN.'
+      : 'Invalid username or PIN.';
+    const usernameNext = document.getElementById('auth-username');
+    const pinNext = document.getElementById('auth-pin');
+    if(usernameNext) usernameNext.value = username;
+    if(pinNext) pinNext.value = pin;
   }
 }
 
@@ -988,7 +986,7 @@ function settingsView(){
   return ''
     + '<header class="page-head"><h1>Settings</h1></header>'
     + '<div class="profile-card"><div class="avatar big">' + esc((u.name || currentUser)[0].toUpperCase()) + '</div>'
-    +   '<div style="flex:1;min-width:0"><h2>' + esc(u.name || currentUser) + '</h2><p>' + esc(u.email || '') + ' · Member since ' + esc(since) + '</p></div></div>'
+    +   '<div style="flex:1;min-width:0"><h2>' + esc(u.name || currentUser) + '</h2><p>@' + esc(currentUser) + ' · Member since ' + esc(since) + '</p></div></div>'
     + '<div class="list">'
     +   '<button data-action="account"><span class="ic">' + icon('user', 19) + '</span>Account details<span class="chev">' + icon('chev', 18) + '</span></button>'
     +   '<button data-action="security"><span class="ic">' + icon('shield', 19) + '</span>Security<span class="chev">' + icon('chev', 18) + '</span></button>'
@@ -1025,7 +1023,7 @@ function vaultUserCard(profile){
   return '<article class="vault-user">'
     + '<div class="vault-user-head">'
     +   '<div class="avatar" aria-hidden="true" style="width:38px;height:38px;font-size:14px">' + esc(name[0].toUpperCase()) + '</div>'
-    +   '<div style="flex:1;min-width:0"><b>' + esc(name) + '</b><span>' + esc(profile.email || '') + '</span></div>'
+    +   '<div style="flex:1;min-width:0"><b>@' + esc(profile.username || '') + '</b><span>Registered profile</span></div>'
     + '</div>'
     + '<div class="profile-detail"><span>Username</span><b>@' + esc(profile.username || '') + '</b></div>'
     + '<div class="profile-detail"><span>Joined</span><b>' + esc(joined) + '</b></div>'

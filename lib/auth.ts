@@ -1,15 +1,10 @@
 import { betterAuth } from 'better-auth'
+import { username } from 'better-auth/plugins'
 import { db, pool } from '@/lib/db'
 import { pulseProfiles } from '@/lib/db/schema'
 
 if (!process.env.BETTER_AUTH_SECRET || process.env.BETTER_AUTH_SECRET.length < 32) {
   throw new Error('BETTER_AUTH_SECRET must contain at least 32 characters.')
-}
-
-function profileUsername(name: string, userId: string) {
-  const base = name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 18) || 'member'
-  const suffix = userId.replace(/[^a-z0-9]/gi, '').slice(-8).toLowerCase()
-  return `${base}_${suffix}`
 }
 
 export const auth = betterAuth({
@@ -24,9 +19,12 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
-    minPasswordLength: 8,
-    maxPasswordLength: 128,
+    minPasswordLength: 4,
+    maxPasswordLength: 4,
   },
+  plugins: [
+    username({ displayUsername: false, minUsernameLength: 3, maxUsernameLength: 30 }),
+  ],
   trustedOrigins: [
     ...(process.env.NODE_ENV === 'development'
       ? [
@@ -58,7 +56,10 @@ export const auth = betterAuth({
             .insert(pulseProfiles)
             .values({
               userId: newUser.id,
-              username: profileUsername(newUser.name, newUser.id),
+              username:
+                typeof newUser.username === 'string'
+                  ? newUser.username.toLowerCase()
+                  : newUser.name.toLowerCase(),
               balanceCents: 200000,
             })
             .onConflictDoNothing()
