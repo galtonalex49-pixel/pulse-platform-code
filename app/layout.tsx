@@ -1,10 +1,9 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
-import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Pulse — Invest & Send',
-  description: 'A mobile-first investing and money transfer experience.',
+  title: 'Pulse — Virtual Portfolio',
+  description: 'A secure virtual portfolio experience. Market prices are illustrative and no financial transactions are processed.',
   generator: 'v0.app',
   icons: {
     icon: [

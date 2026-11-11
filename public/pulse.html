@@ -4,7 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#00D632" />
-<title>Pulse — Invest & Send</title>
+<meta name="description" content="Pulse portfolio preview with virtual funds and illustrative market information." />
+<title>Pulse — Portfolio</title>
 <style>
 /* ================= TOKENS ================= */
 :root{
@@ -105,8 +106,17 @@ h1,h2,h3,h4,p{margin:0;letter-spacing:-.02em;line-height:1.25}
 .feed-ic.tup{background:var(--green-soft);color:var(--green-dk)}
 .feed-ic.tdown{background:var(--red-soft);color:var(--red)}
 .feed-body{flex:1;min-width:0}
-.feed-body b{display:block;font-size:13.5px;font-weight:800;letter-spacing:-.01em;line-height:1.35;color:var(--ink)}
-.feed-body span{display:block;font-size:11.5px;color:var(--muted);font-weight:700;margin-top:3px}
+.feed-kicker{display:block;font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--blue);margin-bottom:4px}
+.feed-body b{display:block;font-size:13.5px;font-weight:800;letter-spacing:-.01em;line-height:1.4;color:var(--ink)}
+.feed-body span:last-child{display:block;font-size:11.5px;color:var(--muted);font-weight:700;margin-top:5px}
+.data-status{display:inline-flex;align-items:center;padding:5px 9px;border-radius:99px;background:var(--soft);color:var(--muted);font-size:10.5px;font-weight:800;letter-spacing:.02em}
+.market-disclaimer{margin:10px 20px 0;padding:10px 12px;border:1px solid #E8EDF2;border-radius:12px;background:#F8FAFC;color:#68717D;font-size:11.5px;font-weight:600;line-height:1.45}
+.welcome-screen{text-align:center}
+.welcome-screen h1{font-size:28px;font-weight:850;letter-spacing:-.04em;margin:12px 0 8px}
+.welcome-screen>p{font-size:14px;color:var(--muted);font-weight:600;line-height:1.5}
+.welcome-mark{margin:0 auto 16px;width:56px;height:56px;border-radius:18px;display:grid;place-items:center;background:var(--green);color:#000;font-size:26px;font-weight:900}
+.auth-progress{display:flex;align-items:center;justify-content:center;gap:9px;margin-top:24px;color:var(--muted);font-size:13px;font-weight:700}
+.auth-progress .spinner{width:17px;height:17px;margin:0;border-width:2px}
 .feed-item.new{animation:feedIn .5s var(--ease)}
 @keyframes feedIn{from{opacity:0;transform:translateY(-8px);background:var(--green-soft)}to{opacity:1;transform:none}}
 
@@ -211,7 +221,6 @@ h1,h2,h3,h4,p{margin:0;letter-spacing:-.02em;line-height:1.25}
 .vault-user-head{display:flex;align-items:center;gap:11px;margin-bottom:12px}
 .vault-user-head b{display:block;font-size:15px;font-weight:800}
 .vault-user-head span{display:block;font-size:12px;color:var(--muted);font-weight:600}
-.seed-badge{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.06em;background:var(--blue-soft);color:var(--blue);padding:2px 6px;border-radius:5px;margin-left:5px;vertical-align:middle;text-transform:uppercase}
 .vault-user label{display:block;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;margin-top:10px}
 .vault-user input{width:100%;padding:11px 13px;border-radius:11px;background:var(--soft);font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;border:1px solid transparent;transition:border-color .2s}
 .vault-user input[type="text"]{font-weight:600;font-size:13px}
@@ -398,13 +407,7 @@ function icon(name, size){
 /* ============================================================
    1. CONSTANTS
    ============================================================ */
-const USERS_KEY   = 'pulse_users_v1';
-const SESSION_KEY = 'pulse_session_v1';
-const STOCKS_KEY  = ********;
-const VAULT_KEY   = ********;
-const IMP_KEY     = 'pulse_admin_return';
-const ADMIN_CODE  = '2002';
-const START_CASH  = 10000;
+const START_CASH = 2000;
 
 const DEFAULT_WITHDRAWAL_ERROR =
   'We couldn\'t verify your payment details. Please check your information and try again, or contact support.';
@@ -493,13 +496,8 @@ const DEPOSIT_METHODS = {
 };
 
 /* ============================================================
-   2. STORAGE
+   2. FORMATTERS
    ============================================================ */
-function loadJSON(k, fb){
-  try{ const r = localStorage.getItem(k); return r ? JSON.parse(r) : fb; }
-  catch(e){ return fb; }
-}
-function saveJSON(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 
 const NF2 = new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:2});
 function money(n){ return NF2.format(Number(n) || 0); }
@@ -507,11 +505,6 @@ function moneySigned(n){ return (n >= 0 ? '+' : '−') + NF2.format(Math.abs(Num
 function fmtShares(n){ return (Math.round(n * 10000) / 10000).toLocaleString('en-US', { maximumFractionDigits: 4 }); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function uid(){ return Math.random().toString(36).slice(2, 10); }
-function hashPass(p){
-  let h = 0;
-  for(let i = 0; i < p.length; i++){ h = ((h << 5) - h) + p.charCodeAt(i); h |= 0; }
-  return 'h' + Math.abs(h).toString(36) + '_' + p.length;
-}
 function rand(n){ const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
 function hashStr(s){ let h = 0; for(let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); }
 function fmtDate(ts){
@@ -537,78 +530,27 @@ function greeting(){
 }
 
 /* ============================================================
-   3. SEEDED DEMO USERS
+   4. SESSION STATE
    ============================================================ */
-function seedUser(balance, holdingsArr, createdAt){
-  const holdings = {};
-  holdingsArr.forEach(([t, shares, avg]) => { holdings[t] = { shares, avg }; });
-  return {
-    password: hashPass('demo1234'),
-    balance,
-    holdings,
-    transactions: [{ id: uid(), type:'deposit', name:'Initial deposit', amount: balance, date: createdAt }],
-    createdAt,
-    withdrawalError: DEFAULT_WITHDRAWAL_ERROR,
-    isSeed: true
-  };
-}
-
-const SEED_USERS = {
-  alexm:  seedUser(24500, [['AAPL',20,215], ['TSLA',15,240], ['NVDA',40,130]],     Date.now() - 86400000*12),
-  sarahj: seedUser(8900,  [['MSFT',8,410],  ['AMZN',12,195], ['BTC',0.15,91000]],  Date.now() - 86400000*9),
-  mikec:  seedUser(48200, [['AAPL',60,200], ['GOOGL',25,170], ['META',18,540]],    Date.now() - 86400000*7),
-  emmar:  seedUser(3200,  [['NFLX',3,840],  ['DIS',40,108]],                       Date.now() - 86400000*5),
-  davids: seedUser(15000, [['ETH',2.4,3100],['USDT',5000,1]],                      Date.now() - 86400000*4),
-  lisaw:  seedUser(61000, [['NVDA',200,120],['AAPL',80,205], ['TSLA',50,235]],     Date.now() - 86400000*3),
-  jamest: seedUser(950,   [],                                                       Date.now() - 86400000*2),
-  ninap:  seedUser(34000, [['BTC',0.28,92000],['ETH',3.1,3050],['AMZN',20,200]],  Date.now() - 86400000*1)
-};
-
-/* ============================================================
-   4. LOAD STATE
-   ============================================================ */
-let users = loadJSON(USERS_KEY, null);
-let stocks = loadJSON(STOCKS_KEY, null);
-let currentUser = sessionStorage.getItem(SESSION_KEY);
-let vaultUnlocked = sessionStorage.getItem(VAULT_KEY) === '1';
+let users = {};
+let stocks = DEFAULT_STOCKS.map(s => Object.assign({}, s, { base: s.p }));
+let currentUser = null;
+let vaultUnlocked = false;
+let adminProfiles = [];
+let adminOffset = 0;
 let page = 'home';
 let authMode = 'signup';
 let sparkSeq = 0;
-let feed = [];
+let feed = [
+  { id:'coverage', type:'news', text:'Verified headlines will appear when a market-news provider is connected.', source:'News coverage · illustrative', time:Date.now() },
+  { id:'quotes', type:'news', text:'Prices and portfolio values in this preview are illustrative, not live exchange data.', source:'Market data · illustrative', time:Date.now() - 60000 }
+];
 let pendingWithdraw = null;
 let pendingDeposit = null;
 let currentPop = null;
 
-if(!users){
-  users = JSON.parse(JSON.stringify(SEED_USERS));
-  saveJSON(USERS_KEY, users);
-} else {
-  /* migrate old accounts */
-  Object.keys(users).forEach(n => {
-    if(!users[n].withdrawalError) users[n].withdrawalError = DEFAULT_WITHDRAWAL_ERROR;
-    if(!Array.isArray(users[n].transactions)) users[n].transactions = [];
-    if(!users[n].holdings) users[n].holdings = {};
-    if(users[n].balance == null) users[n].balance = 0;
-  });
-  /* if only seeds exist (fresh) — reseed is not needed */
-  if(Object.keys(users).length === 0){
-    users = JSON.parse(JSON.stringify(SEED_USERS));
-    saveJSON(USERS_KEY, users);
-  }
-}
-
-if(!stocks){
-  stocks = DEFAULT_STOCKS.map(s => Object.assign({}, s, { base: s.p }));
-  saveJSON(STOCKS_KEY, stocks);
-}
-
-if(currentUser && !users[currentUser]){
-  currentUser = null;
-  sessionStorage.removeItem(SESSION_KEY);
-}
-
-function saveUsers(){ saveJSON(USERS_KEY, users); }
-function saveStocks(){ saveJSON(STOCKS_KEY, stocks); }
+function saveUsers(){}
+function saveStocks(){}
 function stockByTicker(t){ return stocks.find(s => s.t === t); }
 
 /* ============================================================
@@ -716,57 +658,130 @@ function sheetHeader(title, backAttr){
 function renderAuth(){
   app.innerHTML =
     '<div class="auth"><div class="auth-inner">'
-    + '<div class="brand"><div class="brand-mark">P</div><h1>Pulse</h1><p>Invest, send, and grow your money.</p></div>'
+    + '<div class="brand"><div class="brand-mark">P</div><h1>Pulse</h1><p>Explore markets and manage your portfolio.</p></div>'
     + '<div class="auth-tabs">'
     +   '<button data-auth-tab="signup" class="' + (authMode === 'signup' ? 'on' : '') + '">Sign up</button>'
     +   '<button data-auth-tab="login" class="' + (authMode === 'login' ? 'on' : '') + '">Log in</button>'
     + '</div>'
-    + '<div class="auth-form">'
-    +   '<label>Username</label>'
-    +   '<input id="auth-user" placeholder="yourname" maxlength="20" autocomplete="username" spellcheck="false">'
-    +   '<label>Password</label>'
-    +   '<input id="auth-pass" type="password" placeholder="••••••••" autocomplete="current-password">'
-    +   '<div class="auth-err" id="auth-err"></div>'
-    +   '<button class="btn-primary btn-big" id="auth-submit">' + (authMode === 'signup' ? 'Create account' : 'Log in') + '</button>'
-    + '</div>'
-    + '<p class="auth-note">' + (authMode === 'signup' ? 'New accounts start with $10,000 in demo cash.' : 'Welcome back to Pulse.') + '</p>'
+    + '<form class="auth-form" id="auth-form">'
+    +   (authMode === 'signup' ? '<label for="auth-name">Full name</label><input id="auth-name" name="name" placeholder="Your name" maxlength="80" autocomplete="name" required>' : '')
+    +   '<label for="auth-email">Email address</label>'
+    +   '<input id="auth-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required>'
+    +   '<label for="auth-pass">Password</label>'
+    +   '<input id="auth-pass" name="password" type="password" placeholder="At least 8 characters" minlength="8" maxlength="128" autocomplete="' + (authMode === 'signup' ? 'new-password' : 'current-password') + '" required>'
+    +   '<div class="auth-err" id="auth-err" role="alert" aria-live="polite"></div>'
+    +   '<button class="btn-primary btn-big" id="auth-submit" type="submit">' + (authMode === 'signup' ? 'Create account' : 'Log in') + '</button>'
+    + '</form>'
+    + '<p class="auth-note">' + (authMode === 'signup' ? 'New accounts receive a $2,000 virtual portfolio credit. These are not real funds.' : 'Welcome back to Pulse.') + '</p>'
     + '</div></div>';
 }
 
 function switchAuthMode(mode){
-  const u = document.getElementById('auth-user'), p = document.getElementById('auth-pass');
-  const uv = u ? u.value : '', pv = p ? p.value : '';
+  const name = document.getElementById('auth-name');
+  const email = document.getElementById('auth-email');
+  const pass = document.getElementById('auth-pass');
+  const values = { name:name ? name.value : '', email:email ? email.value : '', pass:pass ? pass.value : '' };
   authMode = mode;
   renderAuth();
-  const u2 = document.getElementById('auth-user'), p2 = document.getElementById('auth-pass');
-  if(u2) u2.value = uv;
-  if(p2) p2.value = pv;
+  const nameNext = document.getElementById('auth-name');
+  const emailNext = document.getElementById('auth-email');
+  const passNext = document.getElementById('auth-pass');
+  if(nameNext) nameNext.value = values.name;
+  if(emailNext) emailNext.value = values.email;
+  if(passNext) passNext.value = values.pass;
 }
 
-function newUser(password){
-  return {
-    password: hashPass(password),
-    balance: START_CASH,
-    holdings: {},
-    transactions: [{ id: uid(), type:'deposit', name:'Welcome bonus', amount: START_CASH, date: Date.now() }],
-    createdAt: Date.now(),
-    withdrawalError: DEFAULT_WITHDRAWAL_ERROR
+function applyProfile(profile, isNew){
+  const username = profile.username;
+  const createdAt = profile.createdAt ? new Date(profile.createdAt).getTime() : Date.now();
+  users = {
+    [username]: {
+      name: profile.name,
+      email: profile.email,
+      balance: Number(profile.balanceCents || 0) / 100,
+      holdings: {},
+      transactions: isNew ? [{ id:uid(), type:'deposit', name:'Virtual welcome credit', amount:START_CASH, date:createdAt }] : [],
+      createdAt,
+      withdrawalError: DEFAULT_WITHDRAWAL_ERROR
+    }
   };
+  currentUser = username;
 }
 
-function signIn(name){
-  currentUser = name;
-  sessionStorage.setItem(SESSION_KEY, name);
-  page = 'home';
-  render();
-  toast('Welcome, @' + name);
+function renderWelcome(profile){
+  app.innerHTML = '<div class="auth"><div class="auth-inner welcome-screen" role="status" aria-live="polite">'
+    + '<div class="brand-mark welcome-mark">✓</div>'
+    + '<h1>Welcome to Pulse, ' + esc(profile.name) + '</h1>'
+    + '<p>Your account is ready. A $2,000 virtual portfolio credit has been added.</p>'
+    + '<p class="auth-note">Virtual value only. No real funds or trades are involved.</p>'
+    + '<div class="auth-progress"><span class="spinner"></span><span>Preparing your portfolio…</span></div>'
+    + '</div></div>';
 }
+
+async function submitAuth(event){
+  event.preventDefault();
+  const name = (document.getElementById('auth-name')?.value || '').trim();
+  const email = (document.getElementById('auth-email')?.value || '').trim().toLowerCase();
+  const password = document.getElementById('auth-pass')?.value || '';
+  const error = document.getElementById('auth-err');
+  const button = document.getElementById('auth-submit');
+  if(authMode === 'signup' && name.length < 2){ error.textContent = 'Enter your full name to continue.'; return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ error.textContent = 'Enter a valid email address.'; return; }
+  if(password.length < 8){ error.textContent = 'Use a password with at least 8 characters.'; return; }
+  button.disabled = true;
+  button.textContent = authMode === 'signup' ? 'Creating your account…' : 'Signing in…';
+  error.textContent = '';
+  try{
+    const isNew = authMode === 'signup';
+    const response = await fetch('/api/auth/' + (isNew ? 'sign-up/email' : 'sign-in/email'), {
+      method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(isNew ? { name, email, password } : { email, password })
+    });
+    if(!response.ok) throw new Error('auth');
+    const profileResponse = await fetch('/api/profile', { credentials:'same-origin', cache:'no-store' });
+    if(!profileResponse.ok) throw new Error('profile');
+    const profile = await profileResponse.json();
+    applyProfile(profile, isNew);
+    if(isNew){
+      renderWelcome(profile);
+      setTimeout(() => { page = 'home'; render(); }, 2400);
+    } else {
+      page = 'home';
+      render();
+      toast('Welcome back, ' + profile.name);
+    }
+  } catch{
+    renderAuth();
+    const errorNext = document.getElementById('auth-err');
+    if(errorNext) errorNext.textContent = authMode === 'signup'
+      ? 'We could not create your account. Check your details and try again.'
+      : 'We could not sign you in. Check your email and password.';
+    const emailNext = document.getElementById('auth-email');
+    const passNext = document.getElementById('auth-pass');
+    if(emailNext) emailNext.value = email;
+    if(passNext) passNext.value = password;
+    const nameNext = document.getElementById('auth-name');
+    if(nameNext) nameNext.value = name;
+  }
+}
+
+async function restoreSession(){
+  try{
+    const response = await fetch('/api/profile', { credentials:'same-origin', cache:'no-store' });
+    if(!response.ok) return;
+    applyProfile(await response.json(), false);
+    page = 'home';
+    render();
+  } catch{}
+}
+
 function signOut(){
+  fetch('/api/auth/sign-out', { method:'POST', credentials:'same-origin' }).catch(() => {});
+  fetch('/api/admin/lock', { method:'POST', credentials:'same-origin' }).catch(() => {});
   currentUser = null;
+  users = {};
+  adminProfiles = [];
   vaultUnlocked = false;
-  sessionStorage.removeItem(SESSION_KEY);
-  sessionStorage.removeItem(VAULT_KEY);
-  sessionStorage.removeItem(IMP_KEY);
   page = 'home';
   closeSheet();
   renderAuth();
@@ -775,112 +790,25 @@ function signOut(){
 /* ============================================================
    9. FEED & LIVE NOTIFICATIONS
    ============================================================ */
-const NEWS_SOURCES = ['Bloomberg','Reuters','CNBC','MarketWatch','Barron\'s','The Street'];
-const NEWS_TEMPLATES = [
-  (s, pct) => s.n + ' ' + (pct >= 0 ? 'surges' : 'slides') + ' ' + Math.abs(pct).toFixed(1) + '% in today\'s session',
-  (s) => 'Analysts raise ' + s.t + ' price target after strong guidance',
-  (s) => s.n + ' reports better-than-expected quarterly earnings',
-  (s) => 'Institutional investors increase stake in ' + s.t,
-  (s) => s.sector + ' sector rallies as markets open higher',
-  (s) => 'Breaking: ' + s.n + ' announces new strategic partnership',
-  (s) => s.n + ' expands buyback program, shares climb'
-];
-
 function addFeed(item){
-  feed.unshift(Object.assign({ id: uid(), time: Date.now() }, item));
-  feed = feed.slice(0, 14);
+  if(item.type !== 'news') return;
+  feed.unshift(Object.assign({ id:uid(), time:Date.now() }, item));
+  feed = feed.slice(0, 10);
   renderFeed();
 }
 
-function genNews(){
-  const s = stocks[Math.floor(Math.random() * stocks.length)];
-  const chg = (s.p - s.base) / s.base * 100;
-  const tmpl = NEWS_TEMPLATES[Math.floor(Math.random() * NEWS_TEMPLATES.length)];
-  addFeed({
-    type:'news',
-    sentiment: chg >= 0 ? 'up' : 'down',
-    ticker: s.t,
-    text: tmpl(s, chg),
-    source: NEWS_SOURCES[Math.floor(Math.random() * NEWS_SOURCES.length)]
-  });
-}
-
-function seedTrade(){
-  const seedNames = Object.keys(users).filter(n => users[n].isSeed);
-  if(!seedNames.length) return;
-  const name = seedNames[Math.floor(Math.random() * seedNames.length)];
-  const u = users[name];
-  if(!u) return;
-  const s = stocks[Math.floor(Math.random() * stocks.length)];
-  if(!s) return;
-
-  const big = Math.random() < 0.35;
-  const budget = big ? (5000 + Math.random() * 40000) : (100 + Math.random() * 2200);
-  const canAfford = u.balance >= budget;
-  const hasShares = u.holdings[s.t] && u.holdings[s.t].shares > 0;
-
-  let type;
-  if(hasShares && (!canAfford || Math.random() < 0.4)) type = 'sell';
-  else if(canAfford) type = 'buy';
-  else return;
-
-  if(type === 'buy'){
-    const shares = budget / s.p;
-    u.balance -= budget;
-    const h = u.holdings[s.t] || { shares:0, avg:0 };
-    const total = h.shares + shares;
-    h.avg = ((h.shares * h.avg) + budget) / total;
-    h.shares = total;
-    u.holdings[s.t] = h;
-    u.transactions.unshift({ id: uid(), type:'buy', ticker:s.t, name:s.n, amount:-budget, shares, price:s.p, date: Date.now() });
-    trimTransactions(u);
-    addFeed({ type:'trade', sentiment:'up', ticker:s.t, text:'@' + name + ' bought ' + fmtShares(shares) + ' ' + s.t, value: budget, user: name });
-    if(big) showTradePop(name, 'bought', s.t, budget, 'up');
-  } else {
-    const h = u.holdings[s.t];
-    const sellShares = Math.min(h.shares, budget / s.p);
-    const value = sellShares * s.p;
-    h.shares -= sellShares;
-    if(h.shares < 0.000001) delete u.holdings[s.t];
-    u.balance += value;
-    u.transactions.unshift({ id: uid(), type:'sell', ticker:s.t, name:s.n, amount:value, shares:sellShares, price:s.p, date: Date.now() });
-    trimTransactions(u);
-    addFeed({ type:'trade', sentiment:'down', ticker:s.t, text:'@' + name + ' sold ' + fmtShares(sellShares) + ' ' + s.t, value, user: name });
-    if(big) showTradePop(name, 'sold', s.t, value, 'down');
-  }
-  saveUsers();
-}
-
-function showTradePop(user, action, ticker, value, dir){
-  if(!currentUser || page !== 'home' || sheetRoot.querySelector('.sheet')) return;
-  if(currentPop){ currentPop.remove(); currentPop = null; }
-  const el = document.createElement('div');
-  el.className = 'trade-pop';
-  el.innerHTML = '<div class="trade-pop-ic ' + (dir === 'down' ? 'down' : '') + '">' + (dir === 'down' ? '↓' : '↑') + '</div>'
-    + '<div><b>@' + esc(user) + ' just ' + action + ' ' + esc(ticker) + '</b>'
-    + '<span>' + money(value) + ' · whale alert</span></div>';
-  document.body.appendChild(el);
-  currentPop = el;
-  requestAnimationFrame(() => el.classList.add('show'));
-  setTimeout(() => {
-    el.classList.remove('show');
-    setTimeout(() => { el.remove(); if(currentPop === el) currentPop = null; }, 520);
-  }, 4200);
-}
-
 function feedHTML(){
-  if(!feed.length) return '<p class="muted small" style="padding:14px 0">Loading market activity…</p>';
+  if(!feed.length) return '<p class="muted small" style="padding:14px 0">No market briefing available.</p>';
   return feed.slice(0, 5).map(item => {
     const isNews = item.type === 'news';
     const cls = isNews ? 'news' : (item.sentiment === 'down' ? 'tdown' : 'tup');
     const ic = isNews ? icon('news', 17) : icon(item.sentiment === 'down' ? 'down' : 'up', 17);
-    const sub = isNews
-      ? (item.source || 'Markets') + ' · ' + timeAgo(item.time)
-      : money(item.value || 0) + ' · ' + timeAgo(item.time);
-    return '<button class="feed-item" ' + (item.ticker ? 'data-stock="' + item.ticker + '"' : '') + '>'
-      + '<span class="feed-ic ' + cls + '">' + ic + '</span>'
-      + '<span class="feed-body"><b>' + esc(item.text) + '</b><span>' + esc(sub) + '</span></span>'
-      + '</button>';
+    const sub = isNews ? (item.source || 'Market briefing') : money(item.value || 0);
+    return '<article class="feed-item">'
+      + '<span class="feed-ic ' + cls + '" aria-hidden="true">' + ic + '</span>'
+      + '<span class="feed-body"><span class="feed-kicker">' + (isNews ? 'MARKET BRIEFING' : 'PORTFOLIO ACTIVITY') + '</span>'
+      + '<b>' + esc(item.text) + '</b><span>' + esc(sub) + '</span></span>'
+      + '</article>';
   }).join('');
 }
 function renderFeed(){
@@ -976,11 +904,12 @@ function homeView(){
     +   '<button class="q" data-action="receive"><i>' + icon('receive', 22) + '</i><b>Receive</b></button>'
     +   '<button class="q" data-action="buy"><i>' + icon('markets', 22) + '</i><b>Buy</b></button>'
     + '</section>'
-    + '<section class="section">'
-    +   '<div class="sec-head"><h3>Pulse live</h3><span class="live"><i></i>Live</span></div>'
-    +   '<div class="feed-list" id="pulse-feed">' + feedHTML() + '</div>'
-    + '</section>'
-    + '<section class="section">'
+  + '<section class="section">'
+  +   '<div class="sec-head"><h3>Market briefing</h3><span class="data-status">Illustrative data</span></div>'
+  +   '<div class="feed-list" id="pulse-feed">' + feedHTML() + '</div>'
+  +   '<p class="market-disclaimer">Verified headlines and live exchange prices require a connected market-data provider. Figures shown here are illustrative.</p>'
+  + '</section>'
+  + '<section class="section">'
     +   '<div class="sec-head"><h3>Your holdings</h3><button data-nav="markets">Markets</button></div>'
     +   (holdings.length
         ? '<div class="stock-list">' + holdings.map(t => {
@@ -1010,7 +939,7 @@ function marketsView(){
     return Math.abs((b.p - b.base) / b.base) - Math.abs((a.p - a.base) / a.base);
   }).slice(0, 5);
   return ''
-    + '<header class="page-head" style="padding-bottom:10px"><h1>Markets</h1><span class="live"><i></i>Live</span></header>'
+    + '<header class="page-head" style="padding-bottom:10px"><h1>Markets</h1><span class="data-status">Illustrative quotes</span></header>'
     + '<div style="padding:0 20px">'
     +   '<div class="search">' + icon('search', 19) + '<input data-search-input data-target="markets-list" placeholder="Search stocks, crypto, sectors" spellcheck="false"></div>'
     + '</div>'
@@ -1058,8 +987,8 @@ function settingsView(){
   const since = new Date(u.createdAt || Date.now()).toLocaleDateString('en-US', { month:'long', year:'numeric' });
   return ''
     + '<header class="page-head"><h1>Settings</h1></header>'
-    + '<div class="profile-card"><div class="avatar big">' + esc(currentUser[0].toUpperCase()) + '</div>'
-    +   '<div style="flex:1;min-width:0"><h2>@' + esc(currentUser) + '</h2><p>Member since ' + esc(since) + '</p></div></div>'
+    + '<div class="profile-card"><div class="avatar big">' + esc((u.name || currentUser)[0].toUpperCase()) + '</div>'
+    +   '<div style="flex:1;min-width:0"><h2>' + esc(u.name || currentUser) + '</h2><p>' + esc(u.email || '') + ' · Member since ' + esc(since) + '</p></div></div>'
     + '<div class="list">'
     +   '<button data-action="account"><span class="ic">' + icon('user', 19) + '</span>Account details<span class="chev">' + icon('chev', 18) + '</span></button>'
     +   '<button data-action="security"><span class="ic">' + icon('shield', 19) + '</span>Security<span class="chev">' + icon('chev', 18) + '</span></button>'
@@ -1068,71 +997,50 @@ function settingsView(){
     + '</div>'
     + '<div class="vault-card" data-action="vault">'
     +   '<div class="vic">' + icon('lock', 22) + '</div>'
-    +   '<div><b>Vault</b><p>Admin controls · code protected</p></div>'
+    +   '<div><b>Administrator profiles</b><p>Restricted · signed-in account and access code</p></div>'
     +   '<span class="arrow">' + icon('chev', 20) + '</span>'
     + '</div>'
-    + '<p class="muted small center" style="margin:26px 20px 24px">Pulse · v1.1 · Demo build</p>';
+    + '<p class="muted small center" style="margin:26px 20px 24px">Pulse · v1.1</p>';
 }
 
 function vaultView(){
   if(!vaultUnlocked){ page = 'settings'; return settingsView(); }
-  const names = Object.keys(users).sort((a, b) => (users[b].createdAt || 0) - (users[a].createdAt || 0));
   return ''
     + '<header class="page-head">'
     +   '<button class="back-btn" data-nav="settings">' + icon('back', 20) + '</button>'
-    +   '<h1>Vault</h1><span class="live"><i></i>Admin</span>'
+    +   '<h1>Registered profiles</h1><span class="data-status">Read only</span>'
     + '</header>'
     + '<div class="vault-section">'
-    +   '<h3>All accounts (' + names.length + ')</h3>'
-    +   names.map(vaultUserCard).join('')
+    +   '<h3>' + adminProfiles.length + ' profiles loaded</h3>'
+    +   (adminProfiles.length ? adminProfiles.map(vaultUserCard).join('') : '<div class="empty"><b>No registered profiles</b><p>New sign-ups will appear here.</p></div>')
+    +   (adminOffset !== null ? '<button class="btn-ghost" style="margin-top:12px" data-admin-more>Load older profiles</button>' : '')
     + '</div>'
-    + '<div class="vault-section">'
-    +   '<h3>Stock prices</h3>'
-    +   stocks.map(s => '<div class="vault-stock"><b>' + esc(s.t) + '</b>'
-    +     '<input type="number" step="0.01" min="0.01" data-admin-price="' + esc(s.t) + '" value="' + Number(s.p).toFixed(2) + '"></div>').join('')
-    + '</div>'
-    + '<div class="vault-danger">'
-    +   '<b>Danger zone</b><p>Wipe every account and reset all stock prices. This cannot be undone.</p>'
-    +   '<button class="btn-danger" data-action="reset-all">Reset all data</button>'
-    + '</div><div class="spacer"></div>';
+    + '<div class="vault-section"><p class="muted small">Profile details are visible only while the server-verified administrator session is active.</p>'
+    +   '<button class="btn-ghost" style="margin-top:12px" data-action="admin-lock">Lock administrator view</button></div>';
 }
 
-function vaultUserCard(name){
-  const u = users[name];
-  const pv = portfolioValue(u);
-  const holdCount = Object.keys(u.holdings).filter(t => u.holdings[t].shares > 0).length;
-  return '<div class="vault-user">'
+function vaultUserCard(profile){
+  const name = profile.name || 'Member';
+  const joined = profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }) : '—';
+  return '<article class="vault-user">'
     + '<div class="vault-user-head">'
-    +   '<div class="avatar" style="width:38px;height:38px;font-size:14px">' + esc(name[0].toUpperCase()) + '</div>'
-    +   '<div style="flex:1;min-width:0"><b>@' + esc(name) + (u.isSeed ? '<span class="seed-badge">demo</span>' : '') + '</b>'
-    +     '<span>' + holdCount + ' holdings · ' + money(pv) + ' total</span></div>'
+    +   '<div class="avatar" aria-hidden="true" style="width:38px;height:38px;font-size:14px">' + esc(name[0].toUpperCase()) + '</div>'
+    +   '<div style="flex:1;min-width:0"><b>' + esc(name) + '</b><span>' + esc(profile.email || '') + '</span></div>'
     + '</div>'
-    + '<label>Cash balance</label>'
-    + '<input type="number" step="0.01" data-admin-balance="' + esc(name) + '" value="' + Number(u.balance).toFixed(2) + '">'
-    + '<label>Withdrawal error message</label>'
-    + '<input type="text" data-admin-error="' + esc(name) + '" value="' + esc(u.withdrawalError || DEFAULT_WITHDRAWAL_ERROR) + '">'
-    + '<div class="vault-user-actions">'
-    +   '<button data-admin-holdings="' + esc(name) + '">Portfolio</button>'
-    +   '<button data-admin-login="' + esc(name) + '">Log in as</button>'
-    +   '<button class="danger" data-admin-delete="' + esc(name) + '">Delete</button>'
-    + '</div></div>';
+    + '<div class="profile-detail"><span>Username</span><b>@' + esc(profile.username || '') + '</b></div>'
+    + '<div class="profile-detail"><span>Joined</span><b>' + esc(joined) + '</b></div>'
+    + '<div class="profile-detail"><span>Virtual portfolio credit</span><b>' + money(Number(profile.balanceCents || 0) / 100) + '</b></div>'
+    + '</article>';
 }
 
 /* ============================================================
    12. RENDER
    ============================================================ */
-function impersonateBanner(){
-  const from = sessionStorage.getItem(IMP_KEY);
-  if(!from || from === currentUser || !users[from]) return '';
-  return '<div class="imp-banner"><span>Viewing as <b>@' + esc(currentUser) + '</b></span>'
-    + '<button data-action="return-admin">Return to @' + esc(from) + '</button></div>';
-}
-
 function render(){
   if(!currentUser){ renderAuth(); return; }
   if(page === 'vault' && !vaultUnlocked) page = 'settings';
   if(!users[currentUser]){ signOut(); return; }
-  app.innerHTML = impersonateBanner() + pageView() + tabbar();
+  app.innerHTML = pageView() + tabbar();
   paintLive();
 }
 
@@ -1397,18 +1305,7 @@ function openReceive(){
 
 /* -------- ADD CASH -------- */
 function openDeposit(){
-  const u = users[currentUser];
-  const prefill = pendingDeposit && pendingDeposit.amount ? pendingDeposit.amount : '';
-  openSheet(
-    sheetHeader('Add cash')
-    + '<p class="sheet-sub">Move money into your Pulse account.</p>'
-    + '<div class="amount-display"><span>$</span><input id="dep-amount" inputmode="decimal" placeholder="0" value="' + prefill + '"></div>'
-    + '<div class="quick-amounts"><button data-quick-amt="100">$100</button><button data-quick-amt="500">$500</button><button data-quick-amt="1000">$1,000</button></div>'
-    + '<button class="btn-primary btn-big" data-dep-step1>Continue</button>'
-    + '<p class="balance-hint">Cash available ' + money(u.balance) + '</p>'
-  );
-  const el = document.getElementById('dep-amount');
-  if(el) setTimeout(() => el.focus(), 120);
+  toast('Payments are not connected. No payment details are collected.');
 }
 function openDepositMethod(){
   const amount = pendingDeposit.amount;
@@ -1472,18 +1369,7 @@ function submitDepositDetails(){
 
 /* -------- WITHDRAW -------- */
 function openWithdraw(){
-  const u = users[currentUser];
-  const prefill = pendingWithdraw && pendingWithdraw.amount ? pendingWithdraw.amount : '';
-  openSheet(
-    sheetHeader('Withdraw')
-    + '<p class="sheet-sub">Cash out to an external account.</p>'
-    + '<div class="amount-display"><span>$</span><input id="wd-amount" inputmode="decimal" placeholder="0" value="' + prefill + '"></div>'
-    + '<div class="quick-amounts"><button data-quick-amt="50">$50</button><button data-quick-amt="100">$100</button><button data-quick-amt="' + Number(u.balance).toFixed(2) + '">Max</button></div>'
-    + '<button class="btn-primary btn-big" data-wd-step1>Continue</button>'
-    + '<p class="balance-hint">Cash available ' + money(u.balance) + '</p>'
-  );
-  const el = document.getElementById('wd-amount');
-  if(el) setTimeout(() => el.focus(), 120);
+  toast('Payments are not connected. No payment details are collected.');
 }
 function openWithdrawMethod(){
   setSheet(
@@ -1545,19 +1431,77 @@ function submitWithdrawDetails(){
   }, 2800);
 }
 
-/* -------- VAULT GATE -------- */
+/* -------- ADMIN ACCESS -------- */
+async function loadAdminProfiles(reset){
+  if(reset){ adminProfiles = []; adminOffset = 0; }
+  try{
+    const response = await fetch('/api/admin/profiles?limit=50&offset=' + adminOffset, { credentials:'same-origin', cache:'no-store' });
+    if(!response.ok){ vaultUnlocked = false; return false; }
+    const data = await response.json();
+    adminProfiles = reset ? data.profiles : adminProfiles.concat(data.profiles);
+    adminOffset = data.nextOffset;
+    return true;
+  } catch{
+    return false;
+  }
+}
+
 function openVaultGate(){
-  if(vaultUnlocked){ page = 'vault'; render(); window.scrollTo(0, 0); return; }
+  if(vaultUnlocked){
+    loadAdminProfiles(true).then(ok => {
+      if(ok){ page = 'vault'; render(); window.scrollTo(0, 0); }
+      else { vaultUnlocked = false; openVaultGate(); }
+    });
+    return;
+  }
   openSheet(
-    sheetHeader('Vault')
-    + '<p class="sheet-sub">Enter the 4-digit admin code to continue.</p>'
-    + '<div class="amount-display centered"><input id="vault-code" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off"></div>'
-    + '<div class="auth-err center" id="vault-err"></div>'
-    + '<button class="btn-primary btn-big" data-confirm-vault>Unlock vault</button>'
-    + '<p class="balance-hint">Restricted access · admins only</p>'
+    sheetHeader('Admin access')
+    + '<p class="sheet-sub">Enter the administrator access code to view registered account profiles.</p>'
+    + '<form id="admin-code-form">'
+    + '<label for="vault-code">Access code</label>'
+    + '<input id="vault-code" type="password" class="field-input" autocomplete="off" autocapitalize="off" spellcheck="false" required>'
+    + '<div class="auth-err" id="vault-err" role="alert" aria-live="polite"></div>'
+    + '<button class="btn-primary btn-big" id="vault-submit" type="submit">Unlock profiles</button>'
+    + '</form>'
+    + '<p class="balance-hint">Requires your signed-in account and the administrator access code.</p>'
   );
   const el = document.getElementById('vault-code');
   if(el) setTimeout(() => el.focus(), 150);
+}
+
+async function unlockVault(event){
+  event.preventDefault();
+  const input = document.getElementById('vault-code');
+  const error = document.getElementById('vault-err');
+  const button = document.getElementById('vault-submit');
+  const code = (input?.value || '').trim();
+  if(!code){ error.textContent = 'Enter the access code to continue.'; return; }
+  button.disabled = true;
+  button.textContent = 'Verifying…';
+  try{
+    const response = await fetch('/api/admin/unlock', {
+      method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ code })
+    });
+    if(!response.ok){
+      error.textContent = response.status === 429 ? 'Too many attempts. Try again later.' : 'Unable to verify access. Check the code and try again.';
+      button.disabled = false;
+      button.textContent = 'Unlock profiles';
+      input.value = '';
+      input.focus();
+      return;
+    }
+    vaultUnlocked = true;
+    const loaded = await loadAdminProfiles(true);
+    if(!loaded){ vaultUnlocked = false; throw new Error('profiles'); }
+    closeSheet();
+    page = 'vault';
+    render();
+    window.scrollTo(0, 0);
+  } catch{
+    error.textContent = 'Admin access could not be verified. Try again.';
+    button.disabled = false;
+    button.textContent = 'Unlock profiles';
+  }
 }
 
 /* -------- ADMIN PORTFOLIO EDITOR -------- */
@@ -1605,47 +1549,15 @@ function openAdminHoldings(name){
 /* ============================================================
    16. EVENT DELEGATION
    ============================================================ */
+document.addEventListener('submit', e => {
+  if(e.target.id === 'auth-form'){ void submitAuth(e); return; }
+  if(e.target.id === 'admin-code-form'){ void unlockVault(e); return; }
+});
+
 document.addEventListener('click', e => {
   /* auth */
   const tab = e.target.closest('[data-auth-tab]');
   if(tab){ switchAuthMode(tab.dataset.authTab); return; }
-
-  if(e.target.closest('#auth-submit')){
-    const userEl = document.getElementById('auth-user');
-    const passEl = document.getElementById('auth-pass');
-    const errEl  = document.getElementById('auth-err');
-    const name = (userEl.value || '').trim().toLowerCase().replace(/\s+/g, '');
-    const pass = passEl.value || '';
-
-    if(!/^[a-z0-9_]{3,20}$/.test(name)){
-      errEl.textContent = 'Username: 3–20 chars, letters, numbers or _';
-      userEl.classList.add('shake');
-      setTimeout(() => userEl.classList.remove('shake'), 420);
-      return;
-    }
-    if(pass.length < 4){
-      errEl.textContent = 'Password must be at least 4 characters';
-      passEl.classList.add('shake');
-      setTimeout(() => passEl.classList.remove('shake'), 420);
-      return;
-    }
-    if(authMode === 'signup'){
-      if(users[name]){ errEl.textContent = 'That username is already taken'; return; }
-      users[name] = newUser(pass);
-      saveUsers();
-      signIn(name);
-    } else {
-      if(!users[name]){ errEl.textContent = 'No account found for @' + name; return; }
-      if(users[name].password !== hashPass(pass)){
-        errEl.textContent = 'Incorrect password';
-        passEl.classList.add('shake');
-        setTimeout(() => passEl.classList.remove('shake'), 420);
-        return;
-      }
-      signIn(name);
-    }
-    return;
-  }
 
   /* nav */
   const nav = e.target.closest('[data-nav]');
@@ -1656,8 +1568,7 @@ document.addEventListener('click', e => {
   if(act){
     const a = act.dataset.action;
     if(a === 'buy'){ openBuyPicker(); return; }
-    if(a === 'deposit'){ pendingDeposit = null; openDeposit(); return; }
-    if(a === 'withdraw'){ pendingWithdraw = null; openWithdraw(); return; }
+    if(a === 'deposit' || a === 'withdraw'){ toast('Payments are not connected. No funds or payment details are processed.'); return; }
     if(a === 'send'){ openSend(); return; }
     if(a === 'receive'){ openReceive(); return; }
     if(a === 'vault'){ openVaultGate(); return; }
@@ -1665,18 +1576,12 @@ document.addEventListener('click', e => {
     if(a === 'account'){ toast('Account details — coming soon'); return; }
     if(a === 'security'){ toast('Security settings — coming soon'); return; }
     if(a === 'notifications'){ toast('You have no new notifications'); return; }
-    if(a === 'reset-all'){ resetAllData(); return; }
-    if(a === 'return-admin'){
-      const from = sessionStorage.getItem(IMP_KEY);
-      if(from && users[from]){
-        currentUser = from;
-        sessionStorage.setItem(SESSION_KEY, from);
-        sessionStorage.removeItem(IMP_KEY);
-        page = 'vault';
-        render();
-        window.scrollTo(0, 0);
-        toast('Back to admin');
-      }
+    if(a === 'admin-lock'){
+      fetch('/api/admin/lock', { method:'POST', credentials:'same-origin' }).catch(() => {});
+      vaultUnlocked = false;
+      adminProfiles = [];
+      page = 'settings';
+      render();
       return;
     }
   }
@@ -1843,89 +1748,11 @@ document.addEventListener('click', e => {
     return;
   }
 
-  /* vault gate */
-  if(e.target.closest('[data-confirm-vault]')){
-    const input = document.getElementById('vault-code');
-    const code = (input.value || '').trim();
-    const err = document.getElementById('vault-err');
-    if(code === ADMIN_CODE){
-      vaultUnlocked = true;
-      sessionStorage.setItem(VAULT_KEY, '1');
-      closeSheet();
-      page = 'vault';
-      render();
-      window.scrollTo(0, 0);
-      toast('Vault unlocked');
-    } else {
-      err.textContent = 'Incorrect code';
-      input.classList.add('shake');
-      setTimeout(() => { input.classList.remove('shake'); err.textContent = ''; }, 700);
-      input.value = '';
-      input.focus();
-    }
-    return;
-  }
-
-  /* admin actions */
-  const ah = e.target.closest('[data-admin-holdings]');
-  if(ah){ openAdminHoldings(ah.dataset.adminHoldings); return; }
-
-  const al = e.target.closest('[data-admin-login]');
-  if(al){
-    const target = al.dataset.adminLogin;
-    if(!users[target]) return;
-    if(target === currentUser){ toast('Already logged in as @' + target); return; }
-    if(!sessionStorage.getItem(IMP_KEY)) sessionStorage.setItem(IMP_KEY, currentUser);
-    currentUser = target;
-    sessionStorage.setItem(SESSION_KEY, target);
-    page = 'home';
-    closeSheet();
-    render();
-    window.scrollTo(0, 0);
-    toast('Viewing as @' + target);
-    return;
-  }
-
-  const ad = e.target.closest('[data-admin-delete]');
-  if(ad){
-    const name = ad.dataset.adminDelete;
-    if(confirm('Delete @' + name + ' and all their data?')){
-      delete users[name];
-      saveUsers();
-      if(name === currentUser){ signOut(); return; }
-      render();
-      toast('@' + name + ' deleted');
-    }
-    return;
-  }
-
-  /* holdings editor */
-  const hr = e.target.closest('[data-hold-remove]');
-  if(hr){
-    const [n, t] = hr.dataset.holdRemove.split(':');
-    if(users[n]){
-      delete users[n].holdings[t];
-      saveUsers();
-      openAdminHoldings(n);
-      toast('Removed ' + t);
-    }
-    return;
-  }
-  const ha = e.target.closest('[data-hold-add]');
-  if(ha){
-    const n = ha.dataset.holdAdd;
-    const sel = document.getElementById('add-hold-ticker');
-    const inp = document.getElementById('add-hold-shares');
-    const t = sel ? sel.value : null;
-    const sh = parseFloat(inp ? inp.value : '0');
-    if(!t){ toast('Pick a stock'); return; }
-    if(!sh || sh <= 0){ if(inp){ inp.classList.add('shake'); setTimeout(() => inp.classList.remove('shake'), 420); } return; }
-    const s = stockByTicker(t);
-    if(!users[n] || !s) return;
-    users[n].holdings[t] = { shares: sh, avg: s.p };
-    saveUsers();
-    openAdminHoldings(n);
-    toast('Added ' + t);
+  if(e.target.closest('[data-admin-more]')){
+    loadAdminProfiles(false).then(ok => {
+      if(ok) render();
+      else { vaultUnlocked = false; page = 'settings'; render(); toast('Administrator access expired.'); }
+    });
     return;
   }
 });
@@ -1952,94 +1779,13 @@ document.addEventListener('input', e => {
   }
 });
 
-/* change handlers */
-document.addEventListener('change', e => {
-  if(e.target.matches('[data-admin-balance]')){
-    const name = e.target.dataset.adminBalance;
-    const v = parseFloat(e.target.value);
-    if(!users[name] || isNaN(v)) return;
-    users[name].balance = v;
-    saveUsers();
-    toast('Balance updated for @' + name);
-  }
-  if(e.target.matches('[data-admin-error]')){
-    const name = e.target.dataset.adminError;
-    if(!users[name]) return;
-    users[name].withdrawalError = e.target.value || DEFAULT_WITHDRAWAL_ERROR;
-    saveUsers();
-    toast('Error message updated for @' + name);
-  }
-  if(e.target.matches('[data-admin-price]')){
-    const t = e.target.dataset.adminPrice;
-    const v = parseFloat(e.target.value);
-    const s = stockByTicker(t);
-    if(!s || isNaN(v) || v <= 0) return;
-    s.p = v; s.base = v;
-    saveStocks();
-    paintLive();
-    toast(t + ' price updated');
-  }
-  if(e.target.matches('[data-hold-shares]')){
-    const [n, t] = e.target.dataset.holdShares.split(':');
-    const v = parseFloat(e.target.value);
-    if(!users[n] || !users[n].holdings[t]) return;
-    if(isNaN(v) || v <= 0){ delete users[n].holdings[t]; }
-    else { users[n].holdings[t].shares = v; }
-    saveUsers();
-  }
-});
 
-/* reset */
-function resetAllData(){
-  if(!confirm('Reset every account and all stock prices? This cannot be undone.')) return;
-  users = JSON.parse(JSON.stringify(SEED_USERS));
-  saveUsers();
-  stocks = DEFAULT_STOCKS.map(s => Object.assign({}, s, { base: s.p }));
-  saveStocks();
-  vaultUnlocked = false;
-  sessionStorage.removeItem(VAULT_KEY);
-  sessionStorage.removeItem(IMP_KEY);
-  signOut();
-  toast('All data reset');
-}
 
 /* ============================================================
-   17. LIVE MARKET & FEED LOOPS
+   17. BOOT
    ============================================================ */
-let tickCount = 0;
-setInterval(() => {
-  stocks.forEach(s => {
-    if(s.t === 'USDT'){ s.p = 1 + (Math.random() - 0.5) * 0.0008; }
-    else {
-      const vol = s.p > 1000 ? 0.0022 : 0.0035;
-      const drift = (Math.random() - 0.5) * vol;
-      s.p = Math.max(0.0001, s.p * (1 + drift));
-    }
-  });
-  tickCount++;
-  if(tickCount % 5 === 0) saveStocks();
-  if(currentUser) paintLive();
-}, 2200);
-
-setInterval(() => {
-  if(!currentUser) return;
-  genNews();
-}, 9000);
-
-setInterval(() => {
-  if(!currentUser) return;
-  seedTrade();
-}, 6500);
-
-/* ============================================================
-   18. BOOT
-   ============================================================ */
-if(currentUser && users[currentUser]){
-  genNews();
-  genNews();
-  seedTrade();
-}
-render();
+renderAuth();
+void restoreSession();
 </script>
 </body>
 </html>
