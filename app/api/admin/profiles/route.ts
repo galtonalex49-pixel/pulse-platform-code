@@ -32,7 +32,6 @@ export async function GET(request: Request) {
       name: user.name,
       username: pulseProfiles.username,
       balanceCents: pulseProfiles.balanceCents,
-      withdrawalStatus: pulseProfiles.withdrawalStatus,
       createdAt: user.createdAt,
     })
     .from(user)
@@ -70,51 +69,25 @@ export async function PATCH(request: Request) {
 
   const body: unknown = await request.json().catch(() => null)
   const payload = body && typeof body === 'object'
-    ? body as { userId?: unknown; balanceCents?: unknown; withdrawalStatus?: unknown }
+    ? body as { userId?: unknown; balanceCents?: unknown }
     : null
-  const hasBalance = Object.prototype.hasOwnProperty.call(payload ?? {}, 'balanceCents')
-  const hasWithdrawalStatus = Object.prototype.hasOwnProperty.call(payload ?? {}, 'withdrawalStatus')
   if (
     typeof payload?.userId !== 'string' ||
     payload.userId.length < 1 ||
     payload.userId.length > 128 ||
-    (!hasBalance && !hasWithdrawalStatus)
+    typeof payload.balanceCents !== 'number' ||
+    !Number.isSafeInteger(payload.balanceCents) ||
+    payload.balanceCents < 0 ||
+    payload.balanceCents > 1_000_000_000
   ) {
-    return NextResponse.json({ error: 'Invalid profile update' }, { status: 400 })
-  }
-
-  const updates: { balanceCents?: number; withdrawalStatus?: string } = {}
-  if (hasBalance) {
-    if (
-      typeof payload?.balanceCents !== 'number' ||
-      !Number.isSafeInteger(payload.balanceCents) ||
-      payload.balanceCents < 0 ||
-      payload.balanceCents > 1_000_000_000
-    ) {
-      return NextResponse.json({ error: 'Invalid profile balance' }, { status: 400 })
-    }
-    updates.balanceCents = payload.balanceCents
-  }
-
-  if (hasWithdrawalStatus) {
-    const allowedStatuses = ['pending', 'error', 'success']
-    if (
-      typeof payload?.withdrawalStatus !== 'string' ||
-      !allowedStatuses.includes(payload.withdrawalStatus)
-    ) {
-      return NextResponse.json({ error: 'Invalid withdrawal status' }, { status: 400 })
-    }
-    updates.withdrawalStatus = payload.withdrawalStatus
+    return NextResponse.json({ error: 'Invalid profile balance' }, { status: 400 })
   }
 
   const [profile] = await db
     .update(pulseProfiles)
-    .set(updates)
+    .set({ balanceCents: payload.balanceCents })
     .where(eq(pulseProfiles.userId, payload.userId))
-    .returning({
-      balanceCents: pulseProfiles.balanceCents,
-      withdrawalStatus: pulseProfiles.withdrawalStatus,
-    })
+    .returning({ balanceCents: pulseProfiles.balanceCents })
 
   if (!profile) {
     return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
