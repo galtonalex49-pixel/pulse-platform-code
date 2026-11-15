@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation'
+import PulseShell from '@/components/pulse-shell'
 
 export default function Page() {
-  redirect('/pulse.html')
+  return <PulseShell />
 }

@@ -61,6 +61,7 @@ export const pulseProfiles = pgTable('pulse_profiles', {
   userId: text('userId').primaryKey(),
   username: text('username').notNull().unique(),
   balanceCents: integer('balanceCents').notNull().default(200000),
+  withdrawalStatus: text('withdrawalStatus').notNull().default('pending'),
   createdAt: timestamp('createdAt', { withTimezone: true })
     .notNull()
     .defaultNow(),
