@@ -6,6 +6,9 @@
 <meta name="theme-color" content="#00D632" />
 <meta name="description" content="Pulse portfolio preview with virtual funds and illustrative market information." />
 <title>Pulse — Portfolio</title>
+<script>
+if (window.parent === window) window.location.replace('/');
+</script>
 <style>
 /* ================= TOKENS ================= */
 :root{
@@ -111,6 +114,15 @@ h1,h2,h3,h4,p{margin:0;letter-spacing:-.02em;line-height:1.25}
 .feed-body span:last-child{display:block;font-size:11.5px;color:var(--muted);font-weight:700;margin-top:5px}
 .data-status{display:inline-flex;align-items:center;padding:5px 9px;border-radius:99px;background:var(--soft);color:var(--muted);font-size:10.5px;font-weight:800;letter-spacing:.02em}
 .market-disclaimer{margin:10px 20px 0;padding:10px 12px;border:1px solid #E8EDF2;border-radius:12px;background:#F8FAFC;color:#68717D;font-size:11.5px;font-weight:600;line-height:1.45}
+.market-brand-marquee{overflow:hidden;border:1px solid var(--line);border-radius:18px;background:var(--soft-2);padding:12px 0}
+.market-brand-track{display:flex;width:max-content;align-items:center;gap:10px;animation:marketBrandScroll 28s linear infinite}
+.market-brand-marquee:hover .market-brand-track{animation-play-state:paused}
+.market-brand{display:flex;align-items:center;gap:9px;min-width:max-content;padding:9px 13px;border:1px solid var(--line);border-radius:13px;background:#fff}
+.market-brand b{font-size:12.5px;font-weight:850;letter-spacing:-.02em}
+.market-brand span{font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--muted)}
+.market-brand-caption{margin-top:8px;font-size:10.5px;font-weight:600;color:var(--muted);line-height:1.4}
+@keyframes marketBrandScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.market-brand-track{animation:none}}
 .welcome-screen{text-align:center}
 .welcome-screen h1{font-size:28px;font-weight:850;letter-spacing:-.04em;margin:12px 0 8px}
 .welcome-screen>p{font-size:14px;color:var(--muted);font-weight:600;line-height:1.5}
@@ -409,9 +421,6 @@ function icon(name, size){
    ============================================================ */
 const START_CASH = 2000;
 
-const DEFAULT_WITHDRAWAL_ERROR =
-  'We couldn\'t verify your payment details. Please check your information and try again, or contact support.';
-
 const DEFAULT_STOCKS = [
   { t:'AAPL',  n:'Apple Inc.',       p:227.52,  rating:'Strong Buy', sector:'Technology',     color:'#1D1D1F' },
   { t:'TSLA',  n:'Tesla Inc.',       p:248.19,  rating:'Buy',        sector:'Automotive',     color:'#E82127' },
@@ -427,43 +436,14 @@ const DEFAULT_STOCKS = [
   { t:'DIS',   n:'Walt Disney Co.',  p:112.66,  rating:'Hold',       sector:'Entertainment',  color:'#113CCF' }
 ];
 
-/* --- payment methods --- */
-const WITHDRAW_METHODS = {
-  bank: {
-    label:'Bank account', icon:'🏦',
-    fields:[
-      { name:'holder',  label:'Account holder name', placeholder:'Full legal name' },
-      { name:'routing', label:'Routing number',      placeholder:'9 digits', type:'tel', maxlength:9 },
-      { name:'account', label:'Account number',      placeholder:'Account number', type:'tel' }
-    ]
-  },
-  cashapp: {
-    label:'Cash App', icon:'$',
-    fields:[
-      { name:'tag', label:'$Cashtag', placeholder:'$yourcashtag' }
-    ]
-  },
-  paypal: {
-    label:'PayPal', icon:'P',
-    fields:[
-      { name:'email', label:'PayPal email', placeholder:'you@email.com', type:'email' }
-    ]
-  },
-  zelle: {
-    label:'Zelle', icon:'Z',
-    fields:[
-      { name:'recipient', label:'Recipient name', placeholder:'Full name' },
-      { name:'contact',   label:'Phone or email', placeholder:'+1 555 000 0000' }
-    ]
-  },
-  crypto: {
-    label:'Crypto wallet', icon:'₿',
-    fields:[
-      { name:'network', label:'Network', type:'select', options:['Bitcoin','Ethereum','USDT (TRC20)','Solana'] },
-      { name:'address', label:'Wallet address', placeholder:'Paste your wallet address' }
-    ]
-  }
-};
+const FEATURED_MARKETS = [
+  { name:'Apple', ticker:'AAPL' },
+  { name:'NVIDIA', ticker:'NVDA' },
+  { name:'Microsoft', ticker:'MSFT' },
+  { name:'Amazon', ticker:'AMZN' },
+  { name:'Tesla', ticker:'TSLA' },
+  { name:'Alphabet', ticker:'GOOGL' }
+];
 
 const DEPOSIT_METHODS = {
   card: {
@@ -545,7 +525,6 @@ let feed = [
   { id:'coverage', type:'news', text:'Verified headlines will appear when a market-news provider is connected.', source:'News coverage · illustrative', time:Date.now() },
   { id:'quotes', type:'news', text:'Prices and portfolio values in this preview are illustrative, not live exchange data.', source:'Market data · illustrative', time:Date.now() - 60000 }
 ];
-let pendingWithdraw = null;
 let pendingDeposit = null;
 let currentPop = null;
 let profileSaveQueue = Promise.resolve();
@@ -642,6 +621,11 @@ function toast(msg){
   setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 320); }, 2500);
 }
 
+function notifyShell(type, details){
+  if(window.parent === window) return;
+  window.parent.postMessage(Object.assign({ source:'pulse-app', type }, details || {}), window.location.origin);
+}
+
 function openSheet(html){
   sheetRoot.innerHTML = '<div class="sheet-backdrop"><div class="sheet"><div class="sheet-grab"></div>' + html + '</div></div>';
   document.body.classList.add('no-scroll');
@@ -713,7 +697,7 @@ function applyProfile(profile, isNew){
       holdings: {},
       transactions: isNew ? [{ id:uid(), type:'deposit', name:'Virtual welcome credit', amount:START_CASH, date:createdAt }] : [],
       createdAt,
-      withdrawalError: DEFAULT_WITHDRAWAL_ERROR
+      withdrawalStatus: profile.withdrawalStatus || 'pending'
     }
   };
   currentUser = username;
@@ -749,6 +733,7 @@ async function submitAuth(event){
     applyProfile(profile, isNew);
     page = 'home';
     render();
+    notifyShell('session', { authenticated:true });
     toast(isNew ? 'Account created. Your virtual balance is ready.' : 'Welcome back, ' + profile.name);
   } catch{
     renderAuth();
@@ -770,10 +755,12 @@ async function restoreSession(){
     applyProfile(await response.json(), false);
     page = 'home';
     render();
+    notifyShell('session', { authenticated:true });
   } catch{}
 }
 
 function signOut(){
+  notifyShell('session', { authenticated:false });
   fetch('/api/auth/sign-out', { method:'POST', credentials:'same-origin' }).catch(() => {});
   fetch('/api/admin/lock', { method:'POST', credentials:'same-origin' }).catch(() => {});
   currentUser = null;
@@ -869,6 +856,18 @@ function pageView(){
   }
 }
 
+function featuredMarketsHTML(){
+  const item = (market, duplicate) => '<span class="market-brand"' + (duplicate ? ' aria-hidden="true"' : ' role="listitem"') + '><b>' + esc(market.name) + '</b><span>' + esc(market.ticker) + '</span></span>';
+  const names = FEATURED_MARKETS.map(market => item(market, false)).join('');
+  const duplicates = FEATURED_MARKETS.map(market => item(market, true)).join('');
+  return '<section class="section" style="padding-bottom:20px" aria-label="Featured market names">'
+    + '<div class="sec-head"><h3>Featured markets</h3><span class="data-status">Illustrative</span></div>'
+    + '<div class="market-brand-marquee" role="list" aria-label="Companies in the sample watchlist">'
+    + '<div class="market-brand-track">' + names + duplicates + '</div></div>'
+    + '<p class="market-brand-caption">Market names are sample watchlist entries, not Pulse partners or sponsors.</p>'
+    + '</section>';
+}
+
 function homeView(){
   const u = users[currentUser];
   const pv = portfolioValue(u);
@@ -928,8 +927,9 @@ function homeView(){
     + '</section>'
     + '<section class="section" style="padding-bottom:20px">'
     +   '<div class="sec-head"><h3>Market movers</h3><button data-nav="markets">See all</button></div>'
-    +   '<div class="stock-list">' + movers.map(stockRow).join('') + '</div>'
-    + '</section>';
+    + '<div class="stock-list">' + movers.map(stockRow).join('') + '</div>'
+    + '</section>'
+    + featuredMarketsHTML();
 }
 
 function marketsView(){
@@ -1019,6 +1019,7 @@ function vaultView(){
 
 function vaultUserCard(profile){
   const name = profile.name || 'Member';
+  const withdrawalStatus = ['pending','error','success'].includes(profile.withdrawalStatus) ? profile.withdrawalStatus : 'pending';
   const joined = profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }) : '—';
   return '<article class="vault-user">'
     + '<div class="vault-user-head">'
@@ -1035,6 +1036,18 @@ function vaultUserCard(profile){
   +     '<button class="btn-ghost" type="submit" style="width:auto;flex-shrink:0">Save</button>'
   +   '</div>'
   +   '<p class="balance-hint" data-admin-balance-status role="status" aria-live="polite"></p>'
+  + '</form>'
+  + '<form data-admin-withdrawal-form data-user-id="' + esc(profile.id) + '" style="margin-top:14px">'
+  +   '<label class="field-label" for="admin-withdrawal-' + esc(profile.id) + '">Withdrawal status</label>'
+  +   '<div style="display:flex;align-items:center;gap:8px">'
+  +     '<select class="field-input" id="admin-withdrawal-' + esc(profile.id) + '" style="flex:1;min-width:0">'
+  +       '<option value="pending"' + (withdrawalStatus === 'pending' ? ' selected' : '') + '>Pending</option>'
+  +       '<option value="error"' + (withdrawalStatus === 'error' ? ' selected' : '') + '>Error</option>'
+  +       '<option value="success"' + (withdrawalStatus === 'success' ? ' selected' : '') + '>Success</option>'
+  +     '</select>'
+  +     '<button class="btn-ghost" type="submit" style="width:auto;flex-shrink:0">Save</button>'
+  +   '</div>'
+  +   '<p class="balance-hint" data-admin-withdrawal-status role="status" aria-live="polite"></p>'
   + '</form>'
   + '</article>';
 }
@@ -1176,17 +1189,6 @@ function executeDeposit(amount){
   saveUsers();
   return {};
 }
-function executeWithdraw(amount){
-  const u = users[currentUser];
-  if(!(amount > 0)) return { error: 'Enter a valid amount' };
-  if(amount > u.balance + 0.0001) return { error: 'Insufficient cash balance' };
-  u.balance -= amount;
-  u.transactions.unshift({ id: uid(), type:'withdraw', name:'Virtual withdrawal', amount:-amount, date: Date.now() });
-  trimTransactions(u);
-  saveUsers();
-  return {};
-}
-
 /* ============================================================
    15. SHEET FLOWS
    ============================================================ */
@@ -1415,78 +1417,6 @@ function submitDepositDetails(){
   }, 2000);
 }
 
-/* -------- WITHDRAW -------- */
-function openWithdraw(){
-  const u = users[currentUser];
-  openSheet(
-    sheetHeader('Withdraw virtual cash')
-    + '<p class="sheet-sub">This only updates your practice balance. No payout is initiated.</p>'
-    + '<div class="amount-display"><span>$</span><input id="wd-amount" inputmode="decimal" type="number" min="1" step="0.01" placeholder="0"></div>'
-    + '<div class="quick-amounts"><button type="button" data-quick-amt="25">$25</button><button type="button" data-quick-amt="50">$50</button><button type="button" data-quick-amt="100">$100</button></div>'
-    + '<button class="btn-primary btn-big" data-wd-step1>Withdraw virtual cash</button>'
-    + '<p class="balance-hint">Available balance ' + money(u.balance) + '</p>'
-  );
-}
-function openWithdrawMethod(){
-  setSheet(
-    sheetHeader('Withdraw ' + money(pendingWithdraw.amount), 'data-wd-back')
-    + '<p class="sheet-sub">Select where to send your cash.</p>'
-    + '<div class="method-grid">'
-    + Object.keys(WITHDRAW_METHODS).map(k =>
-        '<button class="method-btn" data-wd-method="' + k + '"><span class="m-ic">' + (WITHDRAW_METHODS[k].icon || '$') + '</span>' + esc(WITHDRAW_METHODS[k].label) + '</button>'
-      ).join('')
-    + '</div>'
-    + '<p class="balance-hint">Amount: ' + money(pendingWithdraw.amount) + '</p>'
-  );
-}
-function openWithdrawDetails(){
-  const m = WITHDRAW_METHODS[pendingWithdraw.method];
-  const body = m.fields.map(f => {
-    if(f.type === 'select'){
-      return '<label class="field-label">' + esc(f.label) + '</label>'
-        + '<select class="field-input" data-wd-field="' + f.name + '">' + f.options.map(o => '<option>' + esc(o) + '</option>').join('') + '</select>';
-    }
-    return '<label class="field-label">' + esc(f.label) + '</label>'
-      + '<input class="field-input" data-wd-field="' + f.name + '" type="' + (f.type || 'text') + '" placeholder="' + esc(f.placeholder || '') + '"'
-      + (f.maxlength ? ' maxlength="' + f.maxlength + '"' : '') + '>';
-  }).join('');
-  setSheet(
-    sheetHeader(m.label, 'data-wd-method-back')
-    + '<p class="sheet-sub">Enter your ' + esc(m.label) + ' details.</p>'
-    + body
-    + '<button class="btn-primary btn-big" style="margin-top:20px" data-wd-submit>Continue</button>'
-    + '<p class="balance-hint">Amount: ' + money(pendingWithdraw.amount) + '</p>'
-  );
-  const first = sheetRoot.querySelector('[data-wd-field]');
-  if(first) setTimeout(() => first.focus(), 160);
-}
-function submitWithdrawDetails(){
-  const fields = sheetRoot.querySelectorAll('[data-wd-field]');
-  let valid = true;
-  fields.forEach(f => {
-    if(!f.value.trim()){
-      f.classList.add('shake');
-      setTimeout(() => f.classList.remove('shake'), 420);
-      valid = false;
-    }
-  });
-  if(!valid) return;
-
-  showProcessing('Processing withdrawal…');
-  setTimeout(() => {
-    const u = users[currentUser];
-    const err = u.withdrawalError || DEFAULT_WITHDRAWAL_ERROR;
-    setSheet(
-      '<div class="error-state">'
-      + '<div class="error-x">✕</div>'
-      + '<h2>Withdrawal rejected</h2>'
-      + '<p>' + esc(err) + '</p>'
-      + '<button class="btn-ghost btn-big" data-close-to-home>Back to home</button>'
-      + '</div>'
-    );
-  }, 2800);
-}
-
 /* -------- ADMIN ACCESS -------- */
 async function saveAdminBalance(event){
   event.preventDefault();
@@ -1512,6 +1442,36 @@ async function saveAdminBalance(event){
     if(profile) profile.balanceCents = balanceCents;
     render();
     toast('Virtual balance updated.');
+  } catch{
+    button.disabled = false;
+    status.textContent = 'Could not save. Your administrator session may have expired.';
+  }
+}
+
+async function saveAdminWithdrawalStatus(event){
+  event.preventDefault();
+  const form = event.target;
+  const select = form.querySelector('select');
+  const status = form.querySelector('[data-admin-withdrawal-status]');
+  const button = form.querySelector('button[type="submit"]');
+  const withdrawalStatus = select.value;
+  if(!['pending','error','success'].includes(withdrawalStatus)){
+    status.textContent = 'Choose a valid withdrawal status.';
+    return;
+  }
+  button.disabled = true;
+  status.textContent = 'Saving…';
+  try{
+    const response = await fetch('/api/admin/profiles', {
+      method:'PATCH', credentials:'same-origin', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ userId:form.dataset.userId, withdrawalStatus })
+    });
+    if(!response.ok) throw new Error('withdrawal-status-update');
+    const result = await response.json();
+    const profile = adminProfiles.find(item => item.id === form.dataset.userId);
+    if(profile) profile.withdrawalStatus = result.withdrawalStatus;
+    render();
+    toast('Withdrawal status updated.');
   } catch{
     button.disabled = false;
     status.textContent = 'Could not save. Your administrator session may have expired.';
@@ -1637,6 +1597,7 @@ function openAdminHoldings(name){
    ============================================================ */
 document.addEventListener('submit', e => {
   if(e.target.matches('[data-admin-balance-form]')){ void saveAdminBalance(e); return; }
+  if(e.target.matches('[data-admin-withdrawal-form]')){ void saveAdminWithdrawalStatus(e); return; }
   if(e.target.id === 'auth-form'){ void submitAuth(e); return; }
   if(e.target.id === 'admin-code-form'){ void unlockVault(e); return; }
 });
@@ -1656,7 +1617,7 @@ document.addEventListener('click', e => {
     const a = act.dataset.action;
     if(a === 'buy'){ openBuyPicker(); return; }
     if(a === 'deposit'){ openDeposit(); return; }
-    if(a === 'withdraw'){ openWithdraw(); return; }
+    if(a === 'withdraw'){ notifyShell('withdraw'); return; }
     if(a === 'send'){ openSend(); return; }
     if(a === 'receive'){ openReceive(); return; }
     if(a === 'vault'){ openVaultGate(); return; }
@@ -1703,7 +1664,6 @@ document.addEventListener('click', e => {
       || document.getElementById('sell-amount')
       || document.getElementById('send-amount')
       || document.getElementById('dep-amount')
-      || document.getElementById('wd-amount')
       || document.getElementById('req-amount');
     if(input && !isNaN(val)){
       input.value = val.toFixed(2);
@@ -1792,18 +1752,6 @@ document.addEventListener('click', e => {
     if(result.error){ toast(result.error); return; }
     render();
     showSuccess('Virtual cash added', money(amount) + ' was added to your practice balance.');
-    return;
-  }
-
-  /* WITHDRAW VIRTUAL CASH */
-  if(e.target.closest('[data-wd-step1]')){
-    const input = document.getElementById('wd-amount');
-    const amount = Math.round(Number(input.value || 0) * 100) / 100;
-    if(!Number.isFinite(amount) || amount <= 0){ input.classList.add('shake'); setTimeout(() => input.classList.remove('shake'), 420); return; }
-    const result = executeWithdraw(amount);
-    if(result.error){ toast(result.error); input.classList.add('shake'); setTimeout(() => input.classList.remove('shake'), 420); return; }
-    render();
-    showSuccess('Virtual cash withdrawn', money(amount) + ' was removed from your practice balance.');
     return;
   }
 

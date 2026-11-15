@@ -22,6 +22,7 @@ export async function GET(request: Request) {
     .select({
       username: pulseProfiles.username,
       balanceCents: pulseProfiles.balanceCents,
+      withdrawalStatus: pulseProfiles.withdrawalStatus,
       createdAt: pulseProfiles.createdAt,
     })
     .from(pulseProfiles)
@@ -42,6 +43,7 @@ export async function GET(request: Request) {
       .select({
         username: pulseProfiles.username,
         balanceCents: pulseProfiles.balanceCents,
+        withdrawalStatus: pulseProfiles.withdrawalStatus,
         createdAt: pulseProfiles.createdAt,
       })
       .from(pulseProfiles)
@@ -69,6 +71,7 @@ export async function GET(request: Request) {
       name: identity.name,
       username: profile.username,
       balanceCents: profile.balanceCents,
+      withdrawalStatus: profile.withdrawalStatus,
       createdAt: profile.createdAt.toISOString(),
     },
     { headers: { 'Cache-Control': 'no-store' } },
