@@ -74,3 +74,33 @@ export async function GET(request: Request) {
     { headers: { 'Cache-Control': 'no-store' } },
   )
 }
+
+export async function PATCH(request: Request) {
+  const origin = request.headers.get('origin')
+  if (!origin || origin !== new URL(request.url).origin) {
+    return NextResponse.json({ error: 'Invalid request origin' }, { status: 403 })
+  }
+
+  const session = await auth.api.getSession({ headers: request.headers })
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const body: unknown = await request.json().catch(() => null)
+  const balanceCents = body && typeof body === 'object' ? (body as { balanceCents?: unknown }).balanceCents : null
+  if (typeof balanceCents !== 'number' || !Number.isSafeInteger(balanceCents) || balanceCents < 0 || balanceCents > 1_000_000_000) {
+    return NextResponse.json({ error: 'Invalid virtual balance' }, { status: 400 })
+  }
+
+  const [profile] = await db
+    .update(pulseProfiles)
+    .set({ balanceCents })
+    .where(eq(pulseProfiles.userId, session.user.id))
+    .returning({ balanceCents: pulseProfiles.balanceCents })
+
+  if (!profile) {
+    return NextResponse.json({ error: 'Profile unavailable' }, { status: 404 })
+  }
+
+  return NextResponse.json(profile, { headers: { 'Cache-Control': 'no-store' } })
+}

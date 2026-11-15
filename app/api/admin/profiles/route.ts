@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm'
+import { desc, eq } from 'drizzle-orm'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
@@ -48,4 +48,48 @@ export async function GET(request: Request) {
     },
     { headers: { 'Cache-Control': 'no-store' } },
   )
+}
+
+export async function PATCH(request: Request) {
+  const origin = request.headers.get('origin')
+  if (!origin || origin !== new URL(request.url).origin) {
+    return NextResponse.json({ error: 'Invalid request origin' }, { status: 403 })
+  }
+
+  const session = await auth.api.getSession({ headers: request.headers })
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const cookieStore = await cookies()
+  const adminToken = cookieStore.get(ADMIN_COOKIE_NAME)?.value
+  if (!verifyAdminAccessToken(adminToken, session.user.id)) {
+    return NextResponse.json({ error: 'Admin access required.' }, { status: 403 })
+  }
+
+  const body: unknown = await request.json().catch(() => null)
+  const payload = body && typeof body === 'object' ? body as { userId?: unknown; balanceCents?: unknown } : null
+  if (
+    typeof payload?.userId !== 'string' ||
+    payload.userId.length < 1 ||
+    payload.userId.length > 128 ||
+    typeof payload.balanceCents !== 'number' ||
+    !Number.isSafeInteger(payload.balanceCents) ||
+    payload.balanceCents < 0 ||
+    payload.balanceCents > 1_000_000_000
+  ) {
+    return NextResponse.json({ error: 'Invalid profile balance' }, { status: 400 })
+  }
+
+  const [profile] = await db
+    .update(pulseProfiles)
+    .set({ balanceCents: payload.balanceCents })
+    .where(eq(pulseProfiles.userId, payload.userId))
+    .returning({ balanceCents: pulseProfiles.balanceCents })
+
+  if (!profile) {
+    return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+  }
+
+  return NextResponse.json(profile, { headers: { 'Cache-Control': 'no-store' } })
 }

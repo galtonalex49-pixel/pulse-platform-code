@@ -548,8 +548,23 @@ let feed = [
 let pendingWithdraw = null;
 let pendingDeposit = null;
 let currentPop = null;
+let profileSaveQueue = Promise.resolve();
 
-function saveUsers(){}
+function saveUsers(){
+  const username = currentUser;
+  const profile = users[username];
+  if(!username || !profile) return profileSaveQueue;
+  const balanceCents = Math.round(profile.balance * 100);
+  profileSaveQueue = profileSaveQueue.catch(() => {}).then(async () => {
+    if(currentUser !== username) return;
+    const response = await fetch('/api/profile', {
+      method:'PATCH', credentials:'same-origin', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ balanceCents })
+    });
+    if(!response.ok) throw new Error('balance-save');
+  }).catch(() => toast('Balance could not be saved. Please try again.'));
+  return profileSaveQueue;
+}
 function saveStocks(){}
 function stockByTicker(t){ return stocks.find(s => s.t === t); }
 
@@ -704,16 +719,6 @@ function applyProfile(profile, isNew){
   currentUser = username;
 }
 
-function renderWelcome(profile){
-  app.innerHTML = '<div class="auth"><div class="auth-inner welcome-screen" role="status" aria-live="polite">'
-    + '<div class="brand-mark welcome-mark">✓</div>'
-    + '<h1>Welcome to Pulse, ' + esc(profile.name) + '</h1>'
-    + '<p>Your account is ready. A $2,000 virtual portfolio credit has been added.</p>'
-    + '<p class="auth-note">Virtual value only. No real funds or trades are involved.</p>'
-    + '<div class="auth-progress"><span class="spinner"></span><span>Preparing your portfolio…</span></div>'
-    + '</div></div>';
-}
-
 async function submitAuth(event){
   event.preventDefault();
   const username = (document.getElementById('auth-username')?.value || '').trim().toLowerCase();
@@ -742,14 +747,9 @@ async function submitAuth(event){
     if(!profileResponse.ok) throw new Error('profile');
     const profile = await profileResponse.json();
     applyProfile(profile, isNew);
-    if(isNew){
-      renderWelcome(profile);
-      setTimeout(() => { page = 'home'; render(); }, 2400);
-    } else {
-      page = 'home';
-      render();
-      toast('Welcome back, ' + profile.name);
-    }
+    page = 'home';
+    render();
+    toast(isNew ? 'Account created. Your virtual balance is ready.' : 'Welcome back, ' + profile.name);
   } catch{
     renderAuth();
     const errorNext = document.getElementById('auth-err');
@@ -1006,7 +1006,7 @@ function vaultView(){
   return ''
     + '<header class="page-head">'
     +   '<button class="back-btn" data-nav="settings">' + icon('back', 20) + '</button>'
-    +   '<h1>Registered profiles</h1><span class="data-status">Read only</span>'
+    +   '<h1>Registered profiles</h1><span class="data-status">Balance editor</span>'
     + '</header>'
     + '<div class="vault-section">'
     +   '<h3>' + adminProfiles.length + ' profiles loaded</h3>'
@@ -1027,8 +1027,16 @@ function vaultUserCard(profile){
     + '</div>'
     + '<div class="profile-detail"><span>Username</span><b>@' + esc(profile.username || '') + '</b></div>'
     + '<div class="profile-detail"><span>Joined</span><b>' + esc(joined) + '</b></div>'
-    + '<div class="profile-detail"><span>Virtual portfolio credit</span><b>' + money(Number(profile.balanceCents || 0) / 100) + '</b></div>'
-    + '</article>';
+  + '<div class="profile-detail"><span>Virtual portfolio balance</span><b>' + money(Number(profile.balanceCents || 0) / 100) + '</b></div>'
+  + '<form data-admin-balance-form data-user-id="' + esc(profile.id) + '" style="margin-top:14px">'
+  +   '<label class="field-label" for="admin-balance-' + esc(profile.id) + '">Set virtual balance</label>'
+  +   '<div style="display:flex;align-items:center;gap:8px">'
+  +     '<input class="field-input" id="admin-balance-' + esc(profile.id) + '" type="number" inputmode="decimal" min="0" max="10000000" step="0.01" value="' + (Number(profile.balanceCents || 0) / 100).toFixed(2) + '" required style="flex:1;min-width:0">'
+  +     '<button class="btn-ghost" type="submit" style="width:auto;flex-shrink:0">Save</button>'
+  +   '</div>'
+  +   '<p class="balance-hint" data-admin-balance-status role="status" aria-live="polite"></p>'
+  + '</form>'
+  + '</article>';
 }
 
 /* ============================================================
@@ -1163,7 +1171,17 @@ function executeDeposit(amount){
   const u = users[currentUser];
   if(!(amount > 0)) return { error: 'Enter a valid amount' };
   u.balance += amount;
-  u.transactions.unshift({ id: uid(), type:'deposit', name:'Bank transfer', amount, date: Date.now() });
+  u.transactions.unshift({ id: uid(), type:'deposit', name:'Virtual top-up', amount, date: Date.now() });
+  trimTransactions(u);
+  saveUsers();
+  return {};
+}
+function executeWithdraw(amount){
+  const u = users[currentUser];
+  if(!(amount > 0)) return { error: 'Enter a valid amount' };
+  if(amount > u.balance + 0.0001) return { error: 'Insufficient cash balance' };
+  u.balance -= amount;
+  u.transactions.unshift({ id: uid(), type:'withdraw', name:'Virtual withdrawal', amount:-amount, date: Date.now() });
   trimTransactions(u);
   saveUsers();
   return {};
@@ -1301,9 +1319,41 @@ function openReceive(){
   );
 }
 
+function openAccountDetails(){
+  const u = users[currentUser];
+  openSheet(
+    sheetHeader('Account details')
+    + '<div class="profile-detail"><span>Display name</span><b>' + esc(u.name || currentUser) + '</b></div>'
+    + '<div class="profile-detail"><span>Username</span><b>@' + esc(currentUser) + '</b></div>'
+    + '<div class="profile-detail"><span>Member since</span><b>' + esc(new Date(u.createdAt || Date.now()).toLocaleDateString()) + '</b></div>'
+    + '<div class="profile-detail"><span>Virtual balance</span><b>' + money(u.balance) + '</b></div>'
+  );
+}
+function openSecuritySettings(){
+  openSheet(
+    sheetHeader('Security')
+    + '<p class="sheet-sub">Pulse uses your username and four-digit PIN for this demo account.</p>'
+    + '<div class="profile-detail"><span>Sign-in method</span><b>Username + PIN</b></div>'
+    + '<div class="profile-detail"><span>Recovery</span><b>Not configured</b></div>'
+    + '<p class="balance-hint">Never share your PIN. Sign out on shared devices.</p>'
+    + '<button class="btn-ghost btn-big" data-action="signout">Sign out</button>'
+  );
+}
+function openNotifications(){
+  openSheet(sheetHeader('Notifications') + '<div class="empty"><b>You’re all caught up</b><p>There are no new notifications.</p></div>');
+}
+
 /* -------- ADD CASH -------- */
 function openDeposit(){
-  toast('Payments are not connected. No payment details are collected.');
+  const u = users[currentUser];
+  openSheet(
+    sheetHeader('Add virtual cash')
+    + '<p class="sheet-sub">Practice balance only. No payment details or real funds are used.</p>'
+    + '<div class="amount-display"><span>$</span><input id="dep-amount" inputmode="decimal" type="number" min="1" step="0.01" placeholder="0"></div>'
+    + '<div class="quick-amounts"><button type="button" data-quick-amt="25">$25</button><button type="button" data-quick-amt="50">$50</button><button type="button" data-quick-amt="100">$100</button></div>'
+    + '<button class="btn-primary btn-big" data-dep-step1>Add virtual cash</button>'
+    + '<p class="balance-hint">Current balance ' + money(u.balance) + '</p>'
+  );
 }
 function openDepositMethod(){
   const amount = pendingDeposit.amount;
@@ -1367,7 +1417,15 @@ function submitDepositDetails(){
 
 /* -------- WITHDRAW -------- */
 function openWithdraw(){
-  toast('Payments are not connected. No payment details are collected.');
+  const u = users[currentUser];
+  openSheet(
+    sheetHeader('Withdraw virtual cash')
+    + '<p class="sheet-sub">This only updates your practice balance. No payout is initiated.</p>'
+    + '<div class="amount-display"><span>$</span><input id="wd-amount" inputmode="decimal" type="number" min="1" step="0.01" placeholder="0"></div>'
+    + '<div class="quick-amounts"><button type="button" data-quick-amt="25">$25</button><button type="button" data-quick-amt="50">$50</button><button type="button" data-quick-amt="100">$100</button></div>'
+    + '<button class="btn-primary btn-big" data-wd-step1>Withdraw virtual cash</button>'
+    + '<p class="balance-hint">Available balance ' + money(u.balance) + '</p>'
+  );
 }
 function openWithdrawMethod(){
   setSheet(
@@ -1430,6 +1488,36 @@ function submitWithdrawDetails(){
 }
 
 /* -------- ADMIN ACCESS -------- */
+async function saveAdminBalance(event){
+  event.preventDefault();
+  const form = event.target;
+  const input = form.querySelector('input[type="number"]');
+  const status = form.querySelector('[data-admin-balance-status]');
+  const button = form.querySelector('button[type="submit"]');
+  const amount = Number(input.value);
+  const balanceCents = Math.round(amount * 100);
+  if(!Number.isFinite(amount) || amount < 0 || amount > 10000000 || !Number.isSafeInteger(balanceCents)){
+    status.textContent = 'Enter a balance from $0 to $10,000,000.';
+    return;
+  }
+  button.disabled = true;
+  status.textContent = 'Saving…';
+  try{
+    const response = await fetch('/api/admin/profiles', {
+      method:'PATCH', credentials:'same-origin', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ userId:form.dataset.userId, balanceCents })
+    });
+    if(!response.ok) throw new Error('balance-update');
+    const profile = adminProfiles.find(item => item.id === form.dataset.userId);
+    if(profile) profile.balanceCents = balanceCents;
+    render();
+    toast('Virtual balance updated.');
+  } catch{
+    button.disabled = false;
+    status.textContent = 'Could not save. Your administrator session may have expired.';
+  }
+}
+
 async function loadAdminProfiles(reset){
   if(reset){ adminProfiles = []; adminOffset = 0; }
   try{
@@ -1548,6 +1636,7 @@ function openAdminHoldings(name){
    16. EVENT DELEGATION
    ============================================================ */
 document.addEventListener('submit', e => {
+  if(e.target.matches('[data-admin-balance-form]')){ void saveAdminBalance(e); return; }
   if(e.target.id === 'auth-form'){ void submitAuth(e); return; }
   if(e.target.id === 'admin-code-form'){ void unlockVault(e); return; }
 });
@@ -1566,14 +1655,15 @@ document.addEventListener('click', e => {
   if(act){
     const a = act.dataset.action;
     if(a === 'buy'){ openBuyPicker(); return; }
-    if(a === 'deposit' || a === 'withdraw'){ toast('Payments are not connected. No funds or payment details are processed.'); return; }
+    if(a === 'deposit'){ openDeposit(); return; }
+    if(a === 'withdraw'){ openWithdraw(); return; }
     if(a === 'send'){ openSend(); return; }
     if(a === 'receive'){ openReceive(); return; }
     if(a === 'vault'){ openVaultGate(); return; }
     if(a === 'signout'){ signOut(); return; }
-    if(a === 'account'){ toast('Account details — coming soon'); return; }
-    if(a === 'security'){ toast('Security settings — coming soon'); return; }
-    if(a === 'notifications'){ toast('You have no new notifications'); return; }
+    if(a === 'account'){ openAccountDetails(); return; }
+    if(a === 'security'){ openSecuritySettings(); return; }
+    if(a === 'notifications'){ openNotifications(); return; }
     if(a === 'admin-lock'){
       fetch('/api/admin/lock', { method:'POST', credentials:'same-origin' }).catch(() => {});
       vaultUnlocked = false;
@@ -1693,56 +1783,27 @@ document.addEventListener('click', e => {
     return;
   }
 
-  /* ADD CASH step 1 */
+  /* ADD VIRTUAL CASH */
   if(e.target.closest('[data-dep-step1]')){
     const input = document.getElementById('dep-amount');
-    const amount = parseFloat(input.value || '0');
-    if(!amount || amount <= 0){ input.classList.add('shake'); setTimeout(() => input.classList.remove('shake'), 420); return; }
-    pendingDeposit = { amount };
-    openDepositMethod();
-    return;
-  }
-  /* ADD CASH method picked */
-  const dpm = e.target.closest('[data-dep-method]');
-  if(dpm){
-    pendingDeposit.method = dpm.dataset.depMethod;
-    openDepositDetails();
-    return;
-  }
-  /* ADD CASH back */
-  if(e.target.closest('[data-dep-back]')){ openDeposit(); return; }
-  if(e.target.closest('[data-dep-method-back]')){ openDepositMethod(); return; }
-  /* ADD CASH submit */
-  if(e.target.closest('[data-dep-submit]')){ submitDepositDetails(); return; }
-
-  /* WITHDRAW step 1 */
-  if(e.target.closest('[data-wd-step1]')){
-    const u = users[currentUser];
-    const input = document.getElementById('wd-amount');
-    const amount = parseFloat(input.value || '0');
-    if(!amount || amount <= 0){ input.classList.add('shake'); setTimeout(() => input.classList.remove('shake'), 420); return; }
-    if(amount > u.balance){ toast('Insufficient cash balance'); input.classList.add('shake'); setTimeout(() => input.classList.remove('shake'), 420); return; }
-    pendingWithdraw = { amount };
-    openWithdrawMethod();
-    return;
-  }
-  const wdm = e.target.closest('[data-wd-method]');
-  if(wdm){
-    pendingWithdraw.method = wdm.dataset.wdMethod;
-    openWithdrawDetails();
-    return;
-  }
-  if(e.target.closest('[data-wd-back]')){ openWithdraw(); return; }
-  if(e.target.closest('[data-wd-method-back]')){ openWithdrawMethod(); return; }
-  if(e.target.closest('[data-wd-submit]')){ submitWithdrawDetails(); return; }
-
-  /* withdraw error — back to home */
-  if(e.target.closest('[data-close-to-home]')){
-    pendingWithdraw = null;
-    closeSheet();
-    page = 'home';
+    const amount = Math.round(Number(input.value || 0) * 100) / 100;
+    if(!Number.isFinite(amount) || amount <= 0 || amount > 10000000){ input.classList.add('shake'); setTimeout(() => input.classList.remove('shake'), 420); return; }
+    const result = executeDeposit(amount);
+    if(result.error){ toast(result.error); return; }
     render();
-    window.scrollTo(0, 0);
+    showSuccess('Virtual cash added', money(amount) + ' was added to your practice balance.');
+    return;
+  }
+
+  /* WITHDRAW VIRTUAL CASH */
+  if(e.target.closest('[data-wd-step1]')){
+    const input = document.getElementById('wd-amount');
+    const amount = Math.round(Number(input.value || 0) * 100) / 100;
+    if(!Number.isFinite(amount) || amount <= 0){ input.classList.add('shake'); setTimeout(() => input.classList.remove('shake'), 420); return; }
+    const result = executeWithdraw(amount);
+    if(result.error){ toast(result.error); input.classList.add('shake'); setTimeout(() => input.classList.remove('shake'), 420); return; }
+    render();
+    showSuccess('Virtual cash withdrawn', money(amount) + ' was removed from your practice balance.');
     return;
   }
 
